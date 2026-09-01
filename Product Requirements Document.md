@@ -436,7 +436,7 @@ Questions should remain visible until resolved.
 
 # 11. Node Relationships
 
-V1 should support relationships including:
+V1 stores four relationship types. See §46.10.
 
 ### Contains
 
@@ -445,6 +445,9 @@ Authentication
     contains
 Phone OTP
 ```
+
+Hierarchy is stored as a `contains` edge, not as a field on the node. A node has
+one parent in V1, enforced in the database. See §46.2.
 
 ### Depends On
 
@@ -462,17 +465,16 @@ implements
 Phone Authentication
 ```
 
-### Blocks
-
-```text
-Database Schema
-blocks
-Booking API
-```
-
 ### Related To
 
 Used where no stronger relationship exists.
+
+### Blocks — a reading, not a stored type
+
+`blocks` is not stored. "Database Schema blocks Booking API" and "Booking API
+depends on Database Schema" are the same fact about the same pair of nodes.
+Only `depends_on` is recorded, and it is displayed from both ends: as
+"Depends on" on one node's panel and as "Blocks" on the other's. See §46.10.
 
 ---
 
@@ -487,30 +489,32 @@ title
 description
 type
 status
-parent_id / hierarchy information
+data
+pos_x
+pos_y
+deleted_at
 created_at
 updated_at
 ```
 
-Optional fields:
+There is no `parent_id`. Hierarchy is an edge. See §46.2.
+
+`data` is a JSON column holding fields specific to a node type — a Decision's
+reasoning and alternatives, for instance. Anything filtered or sorted on gets a
+real column; anything only displayed goes in `data`. See §46.3.
+
+`pos_x` and `pos_y` are null when a node is automatically positioned, and set
+once the user drags it. See §46.8.
+
+Every relationship, including containment, is an edge:
 
 ```text
-reasoning
-notes
-priority
-estimated complexity
-AI-generated flag
-```
-
-Relationships should exist independently of the node hierarchy.
-
-Example:
-
-```text
-relationship_id
+id
+project_id
 source_node_id
 target_node_id
-relationship_type
+type
+deleted_at
 ```
 
 ---
@@ -540,6 +544,9 @@ Proposed
 Accepted
 Rejected
 ```
+
+A node with children cannot be set to Done. It reaches Done only when all of its
+descendants are resolved. See §46.4.
 
 ---
 
@@ -819,9 +826,8 @@ This prevents large projects from becoming visually overwhelming.
 
 # 22. Progress Tracking
 
-Users should be able to mark executable nodes as complete.
-
-Parent progress should derive from child progress where appropriate.
+Users mark leaf nodes complete. A node with children is never marked Done
+directly — its state derives from what is beneath it. See §46.4.
 
 Example:
 
@@ -850,9 +856,12 @@ Payments           0%
 
 Project-level progress can then be displayed.
 
-The exact progress algorithm may evolve later.
+Progress is `resolved descendants / all descendants`, counting every node type.
+A Question counts as resolved when Resolved; a Decision when Accepted or
+Rejected; everything else when Done. An unresolved question is genuine
+outstanding work and is counted.
 
-For V1, progress can initially be based on descendant task completion.
+Progress is computed on read, never stored. See §46.4.
 
 ---
 
@@ -1279,9 +1288,12 @@ Project
   └── AI Change Proposals
 ```
 
-A relational database can initially store nodes and edges.
+A relational database stores nodes and edges. A dedicated graph database is not
+necessary for V1.
 
-A dedicated graph database is not necessary for V1 unless future requirements justify it.
+The database must be Postgres or equivalent: the single-parent rule requires a
+partial unique index, the `data` column requires JSON, and progress rollup
+requires recursive queries. Technology is settled in §46.12.
 
 ---
 
@@ -1292,13 +1304,18 @@ User
 Project
 Node
 Edge
+Tag
+NodeTag
 Conversation
 Message
 ChangeProposal
-Decision
 ```
 
-A simplified model could treat decisions as node types rather than separate database entities.
+`Decision` is not a separate entity. Decisions and Questions are node types
+sharing the `Node` table, so an edge can point at them exactly as it points at a
+System. See §46.3.
+
+`Tag` and `NodeTag` support tagging and highlighting. See §46.7.
 
 ---
 
@@ -1306,28 +1323,28 @@ A simplified model could treat decisions as node types rather than separate data
 
 AI graph generation should ideally return structured output rather than prose.
 
-Conceptually:
+Nodes are never identified by name. Two nodes can share a title, and a name
+cannot distinguish "reference the node that exists" from "create a new one".
+Existing nodes are referenced by id; nodes created within the same proposal are
+given a temporary `NEW-n` reference.
 
 ```json
 {
-  "nodes": [
-    {
-      "title": "Authentication",
-      "type": "system",
-      "description": "Allow users to securely identify themselves"
-    }
+  "nodes_to_create": [
+    { "ref": "NEW-1", "title": "Phone Authentication", "type": "system" },
+    { "ref": "NEW-2", "title": "Send OTP", "type": "task" }
   ],
-  "edges": [
-    {
-      "source": "authentication",
-      "target": "phone-authentication",
-      "type": "contains"
-    }
-  ]
+  "edges_to_create": [
+    { "source": "n_7c2e", "target": "NEW-1", "type": "contains" },
+    { "source": "NEW-1",  "target": "NEW-2", "type": "contains" }
+  ],
+  "explanation": "Passwordless phone OTP requires sending and verifying codes."
 }
 ```
 
-The backend should validate AI output before modifying project state.
+The backend validates every reference before modifying project state, and
+re-validates at the moment the user accepts. Application is a single
+transaction. See §46.6.
 
 ---
 
@@ -1353,25 +1370,36 @@ The application should display this proposal before committing the change.
 
 # 34. V1 Scope
 
-V1 includes:
+V1 ships in two phases. See §46.1.
+
+## Phase 1 — no AI
+
+A complete working product with no AI in it.
 
 - user accounts
 - project creation
-- natural-language project descriptions
-- AI initial decomposition
 - interactive graph
 - semantic node types
-- node editing
+- manual node creation and editing
+- node detail panel
+- dependency relationships
+- decision nodes
+- status tracking
+- progress calculation
+- tagging, highlighting and filtering
+- canvas layout with pinned positions
+- next-task recommendation, computed
+- deletion with undo
+- project persistence
+
+## Phase 2 — AI
+
+- natural-language project descriptions
+- AI initial decomposition
 - project chat
 - contextual node chat
 - AI graph change proposals
 - graph change approval
-- status tracking
-- task completion
-- basic progress calculation
-- dependency relationships
-- decision nodes
-- project persistence
 
 ---
 
@@ -1775,8 +1803,9 @@ and how close I am to finishing.”
 
 # 46. Technical Decisions
 
-This section records design decisions resolved after the initial draft.
-Where a decision here conflicts with an earlier section, this section supersedes it.
+This section records design decisions resolved after the initial draft, with the
+reasoning behind each. Earlier sections have been corrected to agree with it; the
+notes below record what changed and why.
 
 ---
 
@@ -1803,7 +1832,7 @@ change proposal reduces to a list of operations that already exist.
 
 ## 46.2 Hierarchy Is Stored As Edges
 
-**Supersedes §12** — nodes do not have a `parent_id` field.
+**Corrects §12** — nodes no longer have a `parent_id` field.
 
 Parent/child is a `contains` row in the edges table, identical in form to
 `depends_on`, `blocks`, `implements` and `related_to`.
@@ -1835,7 +1864,7 @@ Rationale:
 
 ## 46.3 All Node Types Share One Table
 
-**Supersedes §31** — `Decision` is not a separate database entity.
+**Corrects §31** — `Decision` is no longer a separate database entity.
 
 All eight node types (§10) are rows in `nodes`, distinguished by a `type` column.
 Type-specific fields live in a JSON `data` column.
@@ -1931,7 +1960,7 @@ read "Goal: <something that is not the goal>".
 
 Deferred to Phase 2, recorded here so the approach is not relost.
 
-**Supersedes the slug-based example in §32.**
+**Corrects the slug-based example in §32.**
 
 AI output must never identify nodes by name. Two nodes can share a title, and a
 name cannot express the difference between "reference the existing node" and
@@ -2070,7 +2099,7 @@ on a schedule so they do not accumulate indefinitely.
 
 ## 46.10 Relationship Types
 
-**Supersedes §11** — `blocks` is not a stored relationship type.
+**Corrects §11** — `blocks` is no longer a stored relationship type.
 
 V1 stores four edge types:
 
