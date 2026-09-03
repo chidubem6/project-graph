@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { InputOTP } from "@/components/ui/input-otp"
+import { Spinner } from "@/components/ui/spinner"
 import Link from "next/link"
 
 // Presentational only for now. Clerk's hooks get wired in behind these
@@ -370,9 +371,15 @@ export function LoginForm({
           </Field>
 
           <Field>
-            <Button type="submit" size="lg"  disabled={fetchStatus === 'fetching'} className="w-full">
-              Continue
-            </Button>
+            {fetchStatus === 'fetching' ? (
+              <div className="flex h-10 items-center justify-center">
+                <Spinner />
+              </div>
+            ) : (
+              <Button type="submit" size="lg" className="w-full">
+                Continue
+              </Button>
+            )}
           </Field>
         </FieldGroup>
 
