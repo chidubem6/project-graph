@@ -1,4 +1,4 @@
-export default function Authentication() {
+export default function DashboardPage() {
   return (
     <main>
       <p>Dashboard Page</p>
