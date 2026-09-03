@@ -1,6 +1,6 @@
 'use client'
 
-import { useSignIn, useSignUp } from '@clerk/nextjs'
+import { useSignUp } from '@clerk/nextjs'
 import React from 'react'
 
 import { useFinalizeAuth } from './use-finalize-auth'
@@ -10,8 +10,7 @@ type CompleteAccountScreenProps = {
 }
 
 export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProps) {
-  const { signUp } = useSignUp()
-  const { fetchStatus } = useSignIn()
+  const { signUp, fetchStatus } = useSignUp()
   const { finalizeSignUp } = useFinalizeAuth()
 
   // Submit missing requirements to complete sign-up.
