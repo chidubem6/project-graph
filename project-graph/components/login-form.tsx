@@ -49,7 +49,7 @@ export function LoginForm({
           return
         }
 
-        const url = decorateUrl('/')
+        const url = decorateUrl('/dashboard')
         if (url.startsWith('http')) {
           window.location.href = url
         } else {
@@ -70,7 +70,7 @@ export function LoginForm({
           return
         }
 
-        const url = decorateUrl('/')
+        const url = decorateUrl('/dashboard')
         if (url.startsWith('http')) {
           window.location.href = url
         } else {
