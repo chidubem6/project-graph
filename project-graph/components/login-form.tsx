@@ -2,10 +2,10 @@
 
 import { useSignIn, useSignUp } from '@clerk/nextjs'
 import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
-import { useRouter } from 'next/navigation'
 import React from 'react'
 
 import { cn } from "@/lib/utils"
+import { useFinalizeAuth } from "@/components/auth/use-finalize-auth"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -27,7 +27,7 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const { signIn, errors, fetchStatus } = useSignIn()
   const { signUp } = useSignUp()
-  const router = useRouter()
+  const { finalizeSignIn, finalizeSignUp } = useFinalizeAuth()
 
   const [emailAddress, setEmailAddress] = React.useState('')
   const [code, setCode] = React.useState('')
@@ -38,48 +38,6 @@ export function LoginForm({
 
   // Guard against overlapping verification attempts.
   const isVerifying = React.useRef(false)
-
-  const finalizeSignIn = async () => {
-    await signIn.finalize({
-      navigate: ({ session, decorateUrl }) => {
-        if (session?.currentTask) {
-          // Handle pending session tasks
-          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          console.log(session?.currentTask)
-          return
-        }
-
-        const url = decorateUrl('/dashboard')
-        if (url.startsWith('http')) {
-          window.location.href = url
-        } else {
-          router.push(url)
-        }
-      },
-    })
-  }
-
-  // Helper to finalize sign-up and navigate
-  const finalizeSignUp = async () => {
-    await signUp.finalize({
-      navigate: ({ session, decorateUrl }) => {
-        if (session?.currentTask) {
-          // Handle pending session tasks
-          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          console.log(session?.currentTask)
-          return
-        }
-
-        const url = decorateUrl('/dashboard')
-        if (url.startsWith('http')) {
-          window.location.href = url
-        } else {
-          router.push(url)
-        }
-      },
-    })
-  }
-
 
   // Step 1: Start sign-in with signUpIfMissing and send email code
   const handleSubmit = async (e: React.FormEvent) => {
