@@ -69,6 +69,10 @@ export function LoginForm({
 
       {step === 'complete' && <CompleteAccountScreen onStartOver={handleStartOver} />}
 
+      {/* Clerk renders its bot-protection challenge into this node. It stays
+          mounted across every step so the sign-up transfer can still use it
+          after the first screen is gone. */}
+      <div id="clerk-captcha" />
     </div>
   )
 }

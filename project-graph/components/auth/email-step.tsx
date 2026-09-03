@@ -116,8 +116,6 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
             )}
           </Field>
         </FieldGroup>
-
-          <div id="clerk-captcha" />
       </form>
 
       <FieldDescription className="px-6 text-center">
