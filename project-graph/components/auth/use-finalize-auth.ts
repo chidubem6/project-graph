@@ -2,7 +2,6 @@
 
 import { useSignIn, useSignUp } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import React from 'react'
 
 // Both flows end in the same place, so the only thing that differs between
 // the two helpers is which resource is being finalized.
@@ -11,18 +10,15 @@ export function useFinalizeAuth() {
   const { signUp } = useSignUp()
   const router = useRouter()
 
-  const navigateTo = React.useCallback(
-    (url: string) => {
-      if (url.startsWith('http')) {
-        window.location.href = url
-      } else {
-        router.push(url)
-      }
-    },
-    [router],
-  )
+  const navigateTo = (url: string) => {
+    if (url.startsWith('http')) {
+      window.location.href = url
+    } else {
+      router.push(url)
+    }
+  }
 
-  const finalizeSignIn = React.useCallback(async () => {
+  const finalizeSignIn = async () => {
     await signIn.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
@@ -35,9 +31,9 @@ export function useFinalizeAuth() {
         navigateTo(decorateUrl('/dashboard'))
       },
     })
-  }, [signIn, navigateTo])
+  }
 
-  const finalizeSignUp = React.useCallback(async () => {
+  const finalizeSignUp = async () => {
     await signUp.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
@@ -50,7 +46,7 @@ export function useFinalizeAuth() {
         navigateTo(decorateUrl('/dashboard'))
       },
     })
-  }, [signUp, navigateTo])
+  }
 
   return { finalizeSignIn, finalizeSignUp }
 }
