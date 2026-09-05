@@ -21,14 +21,6 @@ export default function LandingPage() {
             </Button>
           </Show>
           <Show when="signed-in">
-            <Button
-              variant="ghost"
-              size="lg"
-              render={<Link href="/dashboard" />}
-              nativeButton={false}
-            >
-              Dashboard
-            </Button>
             <UserButton />
           </Show>
         </nav>
@@ -42,14 +34,26 @@ export default function LandingPage() {
           Structred turns a product description into a graph of goals,
           capabilities, decisions and tasks — so you can see what to build next.
         </p>
-        <Button
-          size="lg"
-          render={<Link href="/sign-in" />}
-          nativeButton={false}
-          className="h-11 px-6 text-base"
-        >
-          Get started
-        </Button>
+        <Show when="signed-out">
+          <Button
+            size="lg"
+            render={<Link href="/sign-in" />}
+            nativeButton={false}
+            className="h-11 px-6 text-base"
+          >
+            Get started
+          </Button>
+        </Show>
+        <Show when="signed-in">
+          <Button
+            size="lg"
+            render={<Link href="/dashboard" />}
+            nativeButton={false}
+            className="h-11 px-6 text-base"
+          >
+            Go to dashboard
+          </Button>
+        </Show>
       </main>
     </div>
   )
