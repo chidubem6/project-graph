@@ -101,15 +101,6 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
             <FieldError>{nameError}</FieldError>
           </Field>
 
-          {signUp.missingFields.includes('legal_accepted') && (
-            <Field>
-              <FieldLabel>
-                <input type="checkbox" required />
-                I agree to the Terms of Service and Privacy Policy
-              </FieldLabel>
-            </Field>
-          )}
-
           <Field>
             <Button size="lg" className="w-full" type="submit" disabled={isCreateAccountDisabled}>
               Create account
