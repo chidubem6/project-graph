@@ -39,8 +39,18 @@ export function LoginForm({
     }
 
     if (signUp.status === 'complete') {
-      // No additional requirements - sign-up is complete
-      await finalizeSignUp()
+      // No additional requirements, but activating the session can still fail.
+      const { error: finalizeError } = await finalizeSignUp()
+
+      if (finalizeError) {
+        console.error(JSON.stringify(finalizeError, null, 2))
+        setTransferError(
+          getClerkErrorMessage(
+            finalizeError,
+            "We couldn't complete account creation. Please try again.",
+          ),
+        )
+      }
     } else if (signUp.status === 'missing_requirements') {
       // Additional fields are required to complete sign-up.
       // Common missing fields include legal_accepted, first_name, last_name, etc.
