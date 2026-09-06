@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 
-import { FieldDescription, FieldGroup } from "@/components/ui/field"
+import { FieldDescription, FieldGroup, FieldSeparator } from "@/components/ui/field"
 
 import { EmailForm } from "./email-form"
+import { SocialSignIn } from "./social-sign-in"
 
 type IdentifyScreenProps = {
   emailAddress: string
@@ -25,6 +26,10 @@ export function IdentifyScreen({ emailAddress, onEmailChange, onCodeSent }: Iden
           <h1 className="text-xl font-bold">Continue to Structred</h1>
           <FieldDescription>Sign in or create an account</FieldDescription>
         </div>
+
+        <SocialSignIn />
+
+        <FieldSeparator>or</FieldSeparator>
 
         <EmailForm
           emailAddress={emailAddress}
