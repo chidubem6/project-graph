@@ -1,17 +1,17 @@
-'use client'
+"use client"
 
-import { useSignIn } from '@clerk/nextjs'
-import { REGEXP_ONLY_DIGITS } from 'input-otp'
-import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
-import Link from 'next/link'
-import React from 'react'
+import { useSignIn } from "@clerk/nextjs"
+import { REGEXP_ONLY_DIGITS } from "input-otp"
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
+import Link from "next/link"
+import React from "react"
 
-import { Button } from '@/components/ui/button'
-import { Field, FieldDescription, FieldError, FieldGroup } from '@/components/ui/field'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import { Button } from "@/components/ui/button"
+import { Field, FieldDescription, FieldError, FieldGroup } from "@/components/ui/field"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 
-import { getClerkErrorMessage } from './get-clerk-error-message'
-import { useFinalizeAuth } from './use-finalize-auth'
+import { getClerkErrorMessage } from "./get-clerk-error-message"
+import { useFinalizeAuth } from "./use-finalize-auth"
 
 type VerificationScreenProps = {
   emailAddress: string
@@ -31,14 +31,14 @@ export function VerificationScreen({
   const { signIn, fetchStatus } = useSignIn()
   const { finalizeSignIn } = useFinalizeAuth()
 
-  const [code, setCode] = React.useState('')
-  const [submitError, setSubmitError] = React.useState('')
+  const [code, setCode] = React.useState("")
+  const [submitError, setSubmitError] = React.useState("")
 
   // Both errors describe the last attempt, so both go stale the moment a new
   // one starts or the user edits the code. flowError belongs to the parent,
   // hence the callback rather than a setter.
   const clearErrors = () => {
-    setSubmitError('')
+    setSubmitError("")
     onClearFlowError?.()
   }
 
@@ -52,7 +52,7 @@ export function VerificationScreen({
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isResending, setIsResending] = React.useState(false)
 
-  const isVerifyInProgress = fetchStatus === 'fetching' || isSubmitting
+  const isVerifyInProgress = fetchStatus === "fetching" || isSubmitting
   const isVerifyDisabled = isVerifyInProgress || !isCodeComplete
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -70,7 +70,7 @@ export function VerificationScreen({
       // the code 'sign_up_if_missing_transfer'. Check for this error
       // to determine if we need to transfer to sign-up.
       if (error) {
-        if (isClerkAPIResponseError(error) && error.errors[0]?.code === 'sign_up_if_missing_transfer') {
+        if (isClerkAPIResponseError(error) && error.errors[0]?.code === "sign_up_if_missing_transfer") {
           // The user doesn't exist - hand off to the sign-up transfer. If it fails
           // the user is left on this screen with an empty code, so resending is the
           // recovery path rather than re-submitting a spent code.
@@ -85,7 +85,7 @@ export function VerificationScreen({
       }
 
       // The user exists and verification succeeded
-      if (signIn.status === 'complete') {
+      if (signIn.status === "complete") {
         // Verification succeeded, but activating the session can still fail.
         const { error: finalizeError } = await finalizeSignIn()
 
@@ -95,17 +95,17 @@ export function VerificationScreen({
             getClerkErrorMessage(finalizeError, "We couldn't complete sign-in. Please try again."),
           )
         }
-      } else if (signIn.status === 'needs_second_factor') {
+      } else if (signIn.status === "needs_second_factor") {
         // Handle MFA if required
         // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
-        setSubmitError('Additional verification is required, but this flow does not support it yet.')
-      } else if (signIn.status === 'needs_client_trust') {
+        setSubmitError("Additional verification is required, but this flow does not support it yet.")
+      } else if (signIn.status === "needs_client_trust") {
         // Handle Device Trust if required
         // See https://clerk.com/docs/guides/development/custom-flows/authentication/device-trust
-        setSubmitError('This device needs additional verification before signing in.')
+        setSubmitError("This device needs additional verification before signing in.")
       } else {
         // Check why the sign-in is not complete
-        console.error('Sign-in attempt not complete:', signIn.status)
+        console.error("Sign-in attempt not complete:", signIn.status)
         setSubmitError("We couldn't complete sign-in. Please try again.")
       }
     } finally {
@@ -113,7 +113,7 @@ export function VerificationScreen({
       setIsSubmitting(false)
       // However this ended, the code has been submitted and is spent, so never
       // leave it behind a live Verify button.
-      setCode('')
+      setCode("")
     }
   }
 
@@ -122,7 +122,7 @@ export function VerificationScreen({
     isActionInFlight.current = true
     setIsResending(true)
     clearErrors()
-    setCode('')
+    setCode("")
 
     try {
       const { error } = await signIn.emailCode.sendCode()
@@ -188,20 +188,20 @@ export function VerificationScreen({
 
         <FieldDescription className="text-center">
           {isResending ? (
-            'Sending a new code...'
+            "Sending a new code..."
           ) : isVerifyInProgress ? (
-            'Verifying...'
+            "Verifying..."
           ) : (
             <>
-              Didn&apos;t get it?{' '}
+              Didn&apos;t get it?{" "}
               <button
                 type="button"
                 onClick={handleResend}
                 className="underline underline-offset-4"
               >
                 Resend code
-              </button>{' '}
-              or{' '}
+              </button>{" "}
+              or{" "}
               <button
                 type="button"
                 onClick={onStartOver}

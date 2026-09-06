@@ -1,21 +1,21 @@
-'use client'
+"use client"
 
-import { useSignIn } from '@clerk/nextjs'
-import Link from 'next/link'
-import React from 'react'
+import { useSignIn } from "@clerk/nextjs"
+import Link from "next/link"
+import React from "react"
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { Spinner } from '@/components/ui/spinner'
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 
-import { getClerkErrorMessage } from './get-clerk-error-message'
+import { getClerkErrorMessage } from "./get-clerk-error-message"
 
 type EmailStepProps = {
   emailAddress: string
@@ -25,7 +25,7 @@ type EmailStepProps = {
 
 export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStepProps) {
   const { signIn, fetchStatus } = useSignIn()
-  const [submitError, setSubmitError] = React.useState('')
+  const [submitError, setSubmitError] = React.useState("")
 
   // Same guard as the verification screen: the ref flips synchronously, so two
   // submits cannot both pass no matter when React re-renders, and the state carries
@@ -35,7 +35,7 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
   const isActionInFlight = React.useRef(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-  const isSubmitInProgress = fetchStatus === 'fetching' || isSubmitting
+  const isSubmitInProgress = fetchStatus === "fetching" || isSubmitting
 
   // Start sign-in with signUpIfMissing and send the email code.
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +43,7 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
     if (isActionInFlight.current) return
     isActionInFlight.current = true
     setIsSubmitting(true)
-    setSubmitError('')
+    setSubmitError("")
 
     try {
       // Create sign-in for the signUpIfMissing flow.
@@ -98,7 +98,7 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
               type="email"
               value={emailAddress}
               onChange={(e) => {
-                setSubmitError('')
+                setSubmitError("")
                 onEmailChange(e.target.value)
               }}
               autoComplete="email"

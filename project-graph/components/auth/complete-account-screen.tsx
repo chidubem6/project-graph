@@ -1,19 +1,19 @@
-'use client'
+"use client"
 
-import { useSignUp } from '@clerk/nextjs'
-import React, { useState } from 'react'
+import { useSignUp } from "@clerk/nextjs"
+import React, { useState } from "react"
 
-import { getClerkErrorMessage } from './get-clerk-error-message'
-import { useFinalizeAuth } from './use-finalize-auth'
-import { Button } from '@/components/ui/button'
+import { getClerkErrorMessage } from "./get-clerk-error-message"
+import { useFinalizeAuth } from "./use-finalize-auth"
+import { Button } from "@/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 
 type CompleteAccountScreenProps = {
   onStartOver: () => void
@@ -22,27 +22,27 @@ type CompleteAccountScreenProps = {
 export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProps) {
   const { signUp, fetchStatus } = useSignUp()
   const { finalizeSignUp } = useFinalizeAuth()
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [nameError, setNameError] = useState('')
-  const [submitError, setSubmitError] = useState('')
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [nameError, setNameError] = useState("")
+  const [submitError, setSubmitError] = useState("")
 
-  const isCreateAccountDisabled = fetchStatus === 'fetching' || firstName.trim() === '' || lastName.trim() === ''
+  const isCreateAccountDisabled = fetchStatus === "fetching" || firstName.trim() === "" || lastName.trim() === ""
 
   // Submit missing requirements to complete sign-up.
   const handleMissingRequirements = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitError('')
+    setSubmitError("")
 
     const trimmedFirstName = firstName.trim()
     const trimmedLastName = lastName.trim()
 
-    if (trimmedFirstName === '' || trimmedLastName === '') {
-      setNameError('First and last name are required.')
+    if (trimmedFirstName === "" || trimmedLastName === "") {
+      setNameError("First and last name are required.")
       return
     }
 
-    setNameError('')
+    setNameError("")
 
     const { error } = await signUp.update({
       firstName: trimmedFirstName,
@@ -56,7 +56,7 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
       return
     }
 
-    if (signUp.status === 'complete') {
+    if (signUp.status === "complete") {
       // Sign-up succeeded, but activating the session can still fail.
       const { error: finalizeError } = await finalizeSignUp()
 
@@ -69,12 +69,12 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
           ),
         )
       }
-    } else if (signUp.status === 'missing_requirements') {
+    } else if (signUp.status === "missing_requirements") {
       // Still missing other fields
-      console.error('Additional fields still required:', signUp.missingFields)
+      console.error("Additional fields still required:", signUp.missingFields)
       setSubmitError("We still need more information before creating your account.")
     } else {
-      console.error('Unexpected sign-up status:', signUp.status)
+      console.error("Unexpected sign-up status:", signUp.status)
       setSubmitError("We couldn't complete account creation. Please try again.")
     }
   }
@@ -97,8 +97,8 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
               name="firstName"
               value={firstName}
               onChange={(e) => {
-                setNameError('')
-                setSubmitError('')
+                setNameError("")
+                setSubmitError("")
                 setFirstName(e.target.value)
               }}
               autoComplete="given-name"
@@ -114,8 +114,8 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
               name="lastName"
               value={lastName}
               onChange={(e) => {
-                setNameError('')
-                setSubmitError('')
+                setNameError("")
+                setSubmitError("")
                 setLastName(e.target.value)
               }}
               autoComplete="family-name"

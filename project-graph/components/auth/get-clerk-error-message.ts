@@ -1,4 +1,4 @@
-import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors"
 
 export function getClerkErrorMessage(error: unknown, fallback: string) {
   if (isClerkAPIResponseError(error)) {

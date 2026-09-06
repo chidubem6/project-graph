@@ -1,7 +1,7 @@
-'use client'
+"use client"
 
-import { useSignIn, useSignUp } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useSignIn, useSignUp } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 
 // Both flows end in the same place, so the only thing that differs between
 // the two helpers is which resource is being finalized. Both return finalize's
@@ -12,7 +12,7 @@ export function useFinalizeAuth() {
   const router = useRouter()
 
   const navigateTo = (url: string) => {
-    if (url.startsWith('http')) {
+    if (url.startsWith("http")) {
       window.location.href = url
     } else {
       router.push(url)
@@ -26,11 +26,11 @@ export function useFinalizeAuth() {
           // Not handled yet: tasks can be switched on from the Clerk dashboard
           // without a code change, so log loudly if one ever shows up here.
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          console.error('Unhandled session task:', session.currentTask)
+          console.error("Unhandled session task:", session.currentTask)
           return
         }
 
-        navigateTo(decorateUrl('/dashboard'))
+        navigateTo(decorateUrl("/dashboard"))
       },
     })
   }
@@ -42,11 +42,11 @@ export function useFinalizeAuth() {
           // Not handled yet: tasks can be switched on from the Clerk dashboard
           // without a code change, so log loudly if one ever shows up here.
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          console.error('Unhandled session task:', session.currentTask)
+          console.error("Unhandled session task:", session.currentTask)
           return
         }
 
-        navigateTo(decorateUrl('/dashboard'))
+        navigateTo(decorateUrl("/dashboard"))
       },
     })
   }
