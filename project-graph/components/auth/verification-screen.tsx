@@ -33,14 +33,22 @@ export function VerificationScreen({
 
   const isCodeComplete = code.length === 6 && !code.includes(' ')
 
-  // Guard against overlapping verification attempts.
+  // The ref is the guard: it flips synchronously, so overlapping submits cannot
+  // both pass no matter when React re-renders. The state carries the same fact
+  // into rendering, and both stay true through the sign-up transfer since
+  // onNeedsSignUp is awaited below.
   const isVerifying = React.useRef(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  const isVerifyInProgress = fetchStatus === 'fetching' || isSubmitting
+  const isVerifyDisabled = isVerifyInProgress || !isCodeComplete
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isCodeComplete) return
     if (isVerifying.current) return
     isVerifying.current = true
+    setIsSubmitting(true)
     setSubmitError('')
 
     try {
@@ -92,6 +100,7 @@ export function VerificationScreen({
       }
     } finally {
       isVerifying.current = false
+      setIsSubmitting(false)
     }
   }
 
@@ -126,7 +135,7 @@ export function VerificationScreen({
               setSubmitError('')
               setCode(value)
             }}
-            disabled={fetchStatus === 'fetching'}
+            disabled={isVerifyInProgress}
             className="justify-center"
             autoFocus
           />
@@ -138,7 +147,7 @@ export function VerificationScreen({
           <Button
             type="submit"
             size="lg"
-            disabled={fetchStatus === 'fetching' || !isCodeComplete}
+            disabled={isVerifyDisabled}
             className="w-full"
           >
             Verify
@@ -146,7 +155,7 @@ export function VerificationScreen({
         </Field>
 
         <FieldDescription className="text-center">
-          {fetchStatus === 'fetching' ? (
+          {isVerifyInProgress ? (
             'Verifying...'
           ) : (
             <>
