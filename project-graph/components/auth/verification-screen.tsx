@@ -1,13 +1,14 @@
 'use client'
 
 import { useSignIn } from '@clerk/nextjs'
+import { REGEXP_ONLY_DIGITS } from 'input-otp'
 import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
 import Link from 'next/link'
 import React from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldGroup } from '@/components/ui/field'
-import { InputOTP } from '@/components/ui/input-otp'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
 import { getClerkErrorMessage } from './get-clerk-error-message'
 import { useFinalizeAuth } from './use-finalize-auth'
@@ -41,7 +42,7 @@ export function VerificationScreen({
     onClearFlowError?.()
   }
 
-  const isCodeComplete = code.length === 6 && !code.includes(' ')
+  const isCodeComplete = code.length === 6
 
   // One action at a time. The ref is the guard: it flips synchronously, so two
   // actions cannot both pass no matter when React re-renders. The states carry
@@ -153,15 +154,23 @@ export function VerificationScreen({
 
         <Field>
           <InputOTP
+            maxLength={6}
+            pattern={REGEXP_ONLY_DIGITS}
             value={code}
             onChange={(value) => {
               clearErrors()
               setCode(value)
             }}
             disabled={isVerifyInProgress}
-            className="justify-center"
+            containerClassName="justify-center"
             autoFocus
-          />
+          >
+            <InputOTPGroup>
+              {Array.from({ length: 6 }, (_, index) => (
+                <InputOTPSlot key={index} index={index} />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
           {submitError && <FieldError className="text-center">{submitError}</FieldError>}
           {flowError && <FieldError className="text-center">{flowError}</FieldError>}
         </Field>

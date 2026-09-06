@@ -1,121 +1,86 @@
 "use client"
 
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
-
-const DIGITS = /\d/g
+import { OTPInput, OTPInputContext } from "input-otp"
+import { MinusIcon } from "lucide-react"
 
 function InputOTP({
-  length = 6,
-  value,
-  onChange,
-  disabled,
-  autoFocus,
+  className,
+  containerClassName,
+  ...props
+}: React.ComponentProps<typeof OTPInput> & {
+  containerClassName?: string
+}) {
+  return (
+    <OTPInput
+      data-slot="input-otp"
+      containerClassName={cn(
+        "cn-input-otp flex items-center has-disabled:opacity-50",
+        containerClassName
+      )}
+      spellCheck={false}
+      className={cn("disabled:cursor-not-allowed", className)}
+      {...props}
+    />
+  )
+}
+
+function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="input-otp-group"
+      className={cn(
+        "flex items-center gap-2 has-aria-invalid:border-destructive has-aria-invalid:ring-3 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function InputOTPSlot({
+  index,
   className,
   ...props
-}: Omit<React.ComponentProps<"div">, "onChange"> & {
-  length?: number
-  value: string
-  onChange: (value: string) => void
-  disabled?: boolean
-  autoFocus?: boolean
+}: React.ComponentProps<"div"> & {
+  index: number
 }) {
-  const inputs = React.useRef<(HTMLInputElement | null)[]>([])
-
-  const focusAt = (index: number) => {
-    const input = inputs.current[Math.max(0, Math.min(length - 1, index))]
-    input?.focus()
-    input?.select()
-  }
-
-  // Keep `value` authoritative: pad it out so every box maps to one character.
-  const chars = value.padEnd(length, " ").slice(0, length).split("")
-
-  const commit = (next: string) => {
-    onChange(next)
-  }
-
-  const setCharAt = (index: number, char: string) => {
-    const next = chars
-      .map((c, i) => (i === index ? char : c))
-      .join("")
-      .trimEnd()
-    commit(next)
-  }
-
-  const handleChange = (index: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const typed = e.target.value.match(DIGITS)?.join("") ?? ""
-    if (!typed) return
-
-    // Typing (or autofilling) more than one digit spills into the boxes to the right.
-    const next = (
-      chars.slice(0, index).join("") + typed + chars.slice(index + typed.length).join("")
-    )
-      .slice(0, length)
-      .trimEnd()
-
-    commit(next)
-    focusAt(index + typed.length)
-  }
-
-  const handleKeyDown = (index: number) => (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace") {
-      e.preventDefault()
-      if (chars[index].trim()) {
-        setCharAt(index, " ")
-      } else if (index > 0) {
-        setCharAt(index - 1, " ")
-        focusAt(index - 1)
-      }
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault()
-      focusAt(index - 1)
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault()
-      focusAt(index + 1)
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = e.clipboardData.getData("text").match(DIGITS)?.join("").slice(0, length)
-    if (!pasted) return
-    e.preventDefault()
-    commit(pasted)
-    focusAt(pasted.length)
-  }
+  const inputOTPContext = React.useContext(OTPInputContext)
+  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
 
   return (
     <div
-      data-slot="input-otp"
-      className={cn("flex items-center gap-2", className)}
+      data-slot="input-otp-slot"
+      data-active={isActive}
+      className={cn(
+        "relative flex h-12 w-10 items-center justify-center rounded-lg border border-input text-lg font-medium tabular-nums transition-all outline-none aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-3 data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:bg-input/30 dark:data-[active=true]:aria-invalid:ring-destructive/40",
+        className
+      )}
       {...props}
     >
-      {chars.map((char, index) => (
-        <input
-          key={index}
-          ref={(el) => {
-            inputs.current[index] = el
-          }}
-          data-slot="input-otp-slot"
-          type="text"
-          inputMode="numeric"
-          autoComplete={index === 0 ? "one-time-code" : "off"}
-          // maxLength is the full length so a browser autofill can drop the whole code in.
-          maxLength={length}
-          value={char.trim()}
-          disabled={disabled}
-          autoFocus={autoFocus && index === 0}
-          aria-label={`Digit ${index + 1} of ${length}`}
-          onChange={handleChange(index)}
-          onKeyDown={handleKeyDown(index)}
-          onPaste={handlePaste}
-          onFocus={(e) => e.currentTarget.select()}
-          className="h-12 w-10 rounded-lg border border-input bg-transparent text-center text-lg font-medium tabular-nums transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
-        />
-      ))}
+      {char}
+      {hasFakeCaret && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+        </div>
+      )}
     </div>
   )
 }
 
-export { InputOTP }
+function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="input-otp-separator"
+      className="flex items-center [&_svg:not([class*='size-'])]:size-4"
+      role="separator"
+      {...props}
+    >
+      <MinusIcon
+      />
+    </div>
+  )
+}
+
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }
