@@ -4,7 +4,8 @@ import { useSignIn, useSignUp } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
 // Both flows end in the same place, so the only thing that differs between
-// the two helpers is which resource is being finalized.
+// the two helpers is which resource is being finalized. Both return finalize's
+// `{ error }` so the calling screen can surface it in its own wording.
 export function useFinalizeAuth() {
   const { signIn } = useSignIn()
   const { signUp } = useSignUp()
@@ -18,8 +19,8 @@ export function useFinalizeAuth() {
     }
   }
 
-  const finalizeSignIn = async () => {
-    await signIn.finalize({
+  const finalizeSignIn = () => {
+    return signIn.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
           // Handle pending session tasks
@@ -33,8 +34,8 @@ export function useFinalizeAuth() {
     })
   }
 
-  const finalizeSignUp = async () => {
-    await signUp.finalize({
+  const finalizeSignUp = () => {
+    return signUp.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
           // Handle pending session tasks

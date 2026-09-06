@@ -66,7 +66,16 @@ export function VerificationScreen({
 
       // The user exists and verification succeeded
       if (signIn.status === 'complete') {
-        await finalizeSignIn()
+        // Verification succeeded, but activating the session can still fail.
+        const { error: finalizeError } = await finalizeSignIn()
+
+        if (finalizeError) {
+          console.error(JSON.stringify(finalizeError, null, 2))
+          setSubmitError(
+            getClerkErrorMessage(finalizeError, "We couldn't complete sign-in. Please try again."),
+          )
+          setCode('')
+        }
       } else if (signIn.status === 'needs_second_factor') {
         // Handle MFA if required
         // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication

@@ -57,7 +57,18 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
     }
 
     if (signUp.status === 'complete') {
-      await finalizeSignUp()
+      // Sign-up succeeded, but activating the session can still fail.
+      const { error: finalizeError } = await finalizeSignUp()
+
+      if (finalizeError) {
+        console.error(JSON.stringify(finalizeError, null, 2))
+        setSubmitError(
+          getClerkErrorMessage(
+            finalizeError,
+            "We couldn't complete account creation. Please try again.",
+          ),
+        )
+      }
     } else if (signUp.status === 'missing_requirements') {
       // Still missing other fields
       console.error('Additional fields still required:', signUp.missingFields)
