@@ -3,6 +3,7 @@
 import { useSignUp } from '@clerk/nextjs'
 import React, { useState } from 'react'
 
+import { getClerkErrorMessage } from './get-clerk-error-message'
 import { useFinalizeAuth } from './use-finalize-auth'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,12 +25,14 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [nameError, setNameError] = useState('')
+  const [submitError, setSubmitError] = useState('')
 
   const isCreateAccountDisabled = fetchStatus === 'fetching' || firstName.trim() === '' || lastName.trim() === ''
 
   // Submit missing requirements to complete sign-up.
   const handleMissingRequirements = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError('')
 
     const trimmedFirstName = firstName.trim()
     const trimmedLastName = lastName.trim()
@@ -41,15 +44,15 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
 
     setNameError('')
 
-    // This example handles legal acceptance as an example.
-    // You can extend this to handle other missing fields like first_name, last_name, etc.
-    // by checking signUp.missingFields and collecting the appropriate values.
     const { error } = await signUp.update({
       firstName: trimmedFirstName,
       lastName: trimmedLastName,
     })
     if (error) {
       console.error(JSON.stringify(error, null, 2))
+      setSubmitError(
+        getClerkErrorMessage(error, "We couldn't update your account. Please try again."),
+      )
       return
     }
 
@@ -58,8 +61,10 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
     } else if (signUp.status === 'missing_requirements') {
       // Still missing other fields
       console.error('Additional fields still required:', signUp.missingFields)
+      setSubmitError("We still need more information before creating your account.")
     } else {
       console.error('Unexpected sign-up status:', signUp.status)
+      setSubmitError("We couldn't complete account creation. Please try again.")
     }
   }
 
@@ -80,7 +85,11 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
               id="firstName"
               name="firstName"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => {
+                setNameError('')
+                setSubmitError('')
+                setFirstName(e.target.value)
+              }}
               autoComplete="given-name"
               className="h-9"
               required
@@ -93,13 +102,19 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
               id="lastName"
               name="lastName"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => {
+                setNameError('')
+                setSubmitError('')
+                setLastName(e.target.value)
+              }}
               autoComplete="family-name"
               className="h-9"
               required
             />
             <FieldError>{nameError}</FieldError>
           </Field>
+
+          {submitError && <FieldError>{submitError}</FieldError>}
 
           <Field>
             <Button size="lg" className="w-full" type="submit" disabled={isCreateAccountDisabled}>

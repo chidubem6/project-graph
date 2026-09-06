@@ -6,6 +6,7 @@ import React from 'react'
 import { cn } from "@/lib/utils"
 import { CompleteAccountScreen } from "@/components/auth/complete-account-screen"
 import { EmailStep } from "@/components/auth/email-step"
+import { getClerkErrorMessage } from "@/components/auth/get-clerk-error-message"
 import { useFinalizeAuth } from "@/components/auth/use-finalize-auth"
 import { VerificationScreen } from "@/components/auth/verification-screen"
 
@@ -21,13 +22,19 @@ export function LoginForm({
 
   const [step, setStep] = React.useState<Step>('email')
   const [emailAddress, setEmailAddress] = React.useState('')
+  const [transferError, setTransferError] = React.useState('')
 
   // Seam between the two flows: the code was verified but no user exists,
   // so the verified identification moves from the sign-in to a new sign-up.
   const handleTransfer = async () => {
+    setTransferError('')
+
     const { error } = await signUp.create({ transfer: true })
     if (error) {
       console.error(JSON.stringify(error, null, 2))
+      setTransferError(
+        getClerkErrorMessage(error, "We couldn't create your account. Please try again."),
+      )
       return
     }
 
@@ -40,12 +47,14 @@ export function LoginForm({
       setStep('complete')
     } else {
       console.error('Unexpected sign-up status:', signUp.status)
+      setTransferError("We couldn't complete account creation. Please try again.")
     }
   }
 
   const handleStartOver = () => {
     signIn.reset()
     signUp.reset()
+    setTransferError('')
     setStep('email')
   }
 
@@ -62,6 +71,7 @@ export function LoginForm({
       {step === 'verify' && (
         <VerificationScreen
           emailAddress={emailAddress}
+          flowError={transferError}
           onNeedsSignUp={handleTransfer}
           onStartOver={handleStartOver}
         />

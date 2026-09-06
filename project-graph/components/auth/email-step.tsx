@@ -8,12 +8,15 @@ import { Button } from '@/components/ui/button'
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
+
+import { getClerkErrorMessage } from './get-clerk-error-message'
 
 type EmailStepProps = {
   emailAddress: string
@@ -23,10 +26,12 @@ type EmailStepProps = {
 
 export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStepProps) {
   const { signIn, errors, fetchStatus } = useSignIn()
+  const [submitError, setSubmitError] = React.useState('')
 
   // Start sign-in with signUpIfMissing and send the email code.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError('')
 
     // Create sign-in for the signUpIfMissing flow.
     // The flow will proceed to verification regardless of whether an account exists or not.
@@ -37,6 +42,9 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
 
     if (createError) {
       console.error(JSON.stringify(createError, null, 2))
+      setSubmitError(
+        getClerkErrorMessage(createError, "We couldn't start sign-in. Please try again."),
+      )
       return
     }
 
@@ -44,6 +52,9 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
     const { error: sendError } = await signIn.emailCode.sendCode()
     if (sendError) {
       console.error(JSON.stringify(sendError, null, 2))
+      setSubmitError(
+        getClerkErrorMessage(sendError, "We couldn't send your code. Please try again."),
+      )
       return
     }
 
@@ -95,13 +106,17 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
               name="email"
               type="email"
               value={emailAddress}
-              onChange={(e) => onEmailChange(e.target.value)}
+              onChange={(e) => {
+                setSubmitError('')
+                onEmailChange(e.target.value)
+              }}
               autoComplete="email"
               placeholder="you@example.com"
               className="h-9"
               required
             />
-            {errors.fields.identifier && <p>{errors.fields.identifier.message}</p>}
+            {errors.fields.identifier && <FieldError>{errors.fields.identifier.message}</FieldError>}
+            {submitError && <FieldError>{submitError}</FieldError>}
           </Field>
 
           <Field>

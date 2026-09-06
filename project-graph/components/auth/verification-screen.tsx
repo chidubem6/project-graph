@@ -6,19 +6,22 @@ import Link from 'next/link'
 import React from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Field, FieldDescription, FieldGroup } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup } from '@/components/ui/field'
 import { InputOTP } from '@/components/ui/input-otp'
 
+import { getClerkErrorMessage } from './get-clerk-error-message'
 import { useFinalizeAuth } from './use-finalize-auth'
 
 type VerificationScreenProps = {
   emailAddress: string
+  flowError?: string
   onNeedsSignUp: () => Promise<void> | void
   onStartOver: () => void
 }
 
 export function VerificationScreen({
   emailAddress,
+  flowError,
   onNeedsSignUp,
   onStartOver,
 }: VerificationScreenProps) {
@@ -26,6 +29,7 @@ export function VerificationScreen({
   const { finalizeSignIn } = useFinalizeAuth()
 
   const [code, setCode] = React.useState('')
+  const [submitError, setSubmitError] = React.useState('')
 
   const isCodeComplete = code.length === 6 && !code.includes(' ')
 
@@ -37,6 +41,7 @@ export function VerificationScreen({
     if (!isCodeComplete) return
     if (isVerifying.current) return
     isVerifying.current = true
+    setSubmitError('')
 
     try {
       const { error } = await signIn.emailCode.verifyCode({ code })
@@ -54,6 +59,7 @@ export function VerificationScreen({
         // Some other error occurred. Clear the boxes so the next submission
         // triggers a fresh attempt.
         console.error(JSON.stringify(error, null, 2))
+        setSubmitError(getClerkErrorMessage(error, "That code didn't work. Please try again."))
         setCode('')
         return
       }
@@ -64,12 +70,15 @@ export function VerificationScreen({
       } else if (signIn.status === 'needs_second_factor') {
         // Handle MFA if required
         // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
+        setSubmitError('Additional verification is required, but this flow does not support it yet.')
       } else if (signIn.status === 'needs_client_trust') {
         // Handle Device Trust if required
         // See https://clerk.com/docs/guides/development/custom-flows/authentication/device-trust
+        setSubmitError('This device needs additional verification before signing in.')
       } else {
         // Check why the sign-in is not complete
         console.error('Sign-in attempt not complete:', signIn.status)
+        setSubmitError("We couldn't complete sign-in. Please try again.")
         setCode('')
       }
     } finally {
@@ -78,8 +87,14 @@ export function VerificationScreen({
   }
 
   const handleResend = async () => {
+    setSubmitError('')
     setCode('')
-    await signIn.emailCode.sendCode()
+    const { error } = await signIn.emailCode.sendCode()
+
+    if (error) {
+      console.error(JSON.stringify(error, null, 2))
+      setSubmitError(getClerkErrorMessage(error, "We couldn't resend your code. Please try again."))
+    }
   }
 
   return (
@@ -98,16 +113,19 @@ export function VerificationScreen({
         <Field>
           <InputOTP
             value={code}
-            onChange={setCode}
+            onChange={(value) => {
+              setSubmitError('')
+              setCode(value)
+            }}
             disabled={fetchStatus === 'fetching'}
             className="justify-center"
             autoFocus
           />
           {errors.fields.code && (
-            <p className="text-center text-sm text-destructive">
-              {errors.fields.code.message}
-            </p>
+            <FieldError className="text-center">{errors.fields.code.message}</FieldError>
           )}
+          {submitError && <FieldError className="text-center">{submitError}</FieldError>}
+          {flowError && <FieldError className="text-center">{flowError}</FieldError>}
         </Field>
 
         <Field>
