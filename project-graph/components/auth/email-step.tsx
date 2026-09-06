@@ -27,37 +27,55 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
   const { signIn, fetchStatus } = useSignIn()
   const [submitError, setSubmitError] = React.useState('')
 
+  // Same guard as the verification screen: the ref flips synchronously, so two
+  // submits cannot both pass no matter when React re-renders, and the state carries
+  // the same fact into rendering. Swapping the button for a spinner was never a
+  // guard on its own - one text field is enough for Enter to submit the form even
+  // with no submit button rendered.
+  const isActionInFlight = React.useRef(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  const isSubmitInProgress = fetchStatus === 'fetching' || isSubmitting
+
   // Start sign-in with signUpIfMissing and send the email code.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isActionInFlight.current) return
+    isActionInFlight.current = true
+    setIsSubmitting(true)
     setSubmitError('')
 
-    // Create sign-in for the signUpIfMissing flow.
-    // The flow will proceed to verification regardless of whether an account exists or not.
-    const { error: createError } = await signIn.create({
-      identifier: emailAddress,
-      signUpIfMissing: true,
-    })
+    try {
+      // Create sign-in for the signUpIfMissing flow.
+      // The flow will proceed to verification regardless of whether an account exists or not.
+      const { error: createError } = await signIn.create({
+        identifier: emailAddress,
+        signUpIfMissing: true,
+      })
 
-    if (createError) {
-      console.error(JSON.stringify(createError, null, 2))
-      setSubmitError(
-        getClerkErrorMessage(createError, "We couldn't start sign-in. Please try again."),
-      )
-      return
+      if (createError) {
+        console.error(JSON.stringify(createError, null, 2))
+        setSubmitError(
+          getClerkErrorMessage(createError, "We couldn't start sign-in. Please try again."),
+        )
+        return
+      }
+
+      // Start the verification step
+      const { error: sendError } = await signIn.emailCode.sendCode()
+      if (sendError) {
+        console.error(JSON.stringify(sendError, null, 2))
+        setSubmitError(
+          getClerkErrorMessage(sendError, "We couldn't send your code. Please try again."),
+        )
+        return
+      }
+
+      onCodeSent()
+    } finally {
+      isActionInFlight.current = false
+      setIsSubmitting(false)
     }
-
-    // Start the verification step
-    const { error: sendError } = await signIn.emailCode.sendCode()
-    if (sendError) {
-      console.error(JSON.stringify(sendError, null, 2))
-      setSubmitError(
-        getClerkErrorMessage(sendError, "We couldn't send your code. Please try again."),
-      )
-      return
-    }
-
-    onCodeSent()
   }
 
   return (
@@ -86,13 +104,14 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
               autoComplete="email"
               placeholder="you@example.com"
               className="h-9"
+              disabled={isSubmitInProgress}
               required
             />
             {submitError && <FieldError>{submitError}</FieldError>}
           </Field>
 
           <Field>
-            {fetchStatus === 'fetching' ? (
+            {isSubmitInProgress ? (
               <div className="flex h-10 items-center justify-center">
                 <Spinner />
               </div>
