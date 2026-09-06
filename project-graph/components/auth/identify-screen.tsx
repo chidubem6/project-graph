@@ -17,13 +17,13 @@ import { Spinner } from "@/components/ui/spinner"
 
 import { getClerkErrorMessage } from "./get-clerk-error-message"
 
-type EmailStepProps = {
+type IdentifyScreenProps = {
   emailAddress: string
   onEmailChange: (emailAddress: string) => void
   onCodeSent: () => void
 }
 
-export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStepProps) {
+export function IdentifyScreen({ emailAddress, onEmailChange, onCodeSent }: IdentifyScreenProps) {
   const { signIn, fetchStatus } = useSignIn()
   const [submitError, setSubmitError] = React.useState("")
 
