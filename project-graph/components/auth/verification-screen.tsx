@@ -70,16 +70,16 @@ export function VerificationScreen({
       // to determine if we need to transfer to sign-up.
       if (error) {
         if (isClerkAPIResponseError(error) && error.errors[0]?.code === 'sign_up_if_missing_transfer') {
-          // The user doesn't exist - hand off to the sign-up transfer.
+          // The user doesn't exist - hand off to the sign-up transfer. If it fails
+          // the user is left on this screen with an empty code, so resending is the
+          // recovery path rather than re-submitting a spent code.
           await onNeedsSignUp()
           return
         }
 
-        // Some other error occurred. Clear the boxes so the next submission
-        // triggers a fresh attempt.
+        // Some other error occurred.
         console.error(JSON.stringify(error, null, 2))
         setSubmitError(getClerkErrorMessage(error, "That code didn't work. Please try again."))
-        setCode('')
         return
       }
 
@@ -93,7 +93,6 @@ export function VerificationScreen({
           setSubmitError(
             getClerkErrorMessage(finalizeError, "We couldn't complete sign-in. Please try again."),
           )
-          setCode('')
         }
       } else if (signIn.status === 'needs_second_factor') {
         // Handle MFA if required
@@ -107,11 +106,13 @@ export function VerificationScreen({
         // Check why the sign-in is not complete
         console.error('Sign-in attempt not complete:', signIn.status)
         setSubmitError("We couldn't complete sign-in. Please try again.")
-        setCode('')
       }
     } finally {
       isActionInFlight.current = false
       setIsSubmitting(false)
+      // However this ended, the code has been submitted and is spent, so never
+      // leave it behind a live Verify button.
+      setCode('')
     }
   }
 
