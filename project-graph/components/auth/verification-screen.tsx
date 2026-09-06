@@ -15,6 +15,7 @@ import { useFinalizeAuth } from './use-finalize-auth'
 type VerificationScreenProps = {
   emailAddress: string
   flowError?: string
+  onClearFlowError?: () => void
   onNeedsSignUp: () => Promise<void> | void
   onStartOver: () => void
 }
@@ -22,6 +23,7 @@ type VerificationScreenProps = {
 export function VerificationScreen({
   emailAddress,
   flowError,
+  onClearFlowError,
   onNeedsSignUp,
   onStartOver,
 }: VerificationScreenProps) {
@@ -30,6 +32,14 @@ export function VerificationScreen({
 
   const [code, setCode] = React.useState('')
   const [submitError, setSubmitError] = React.useState('')
+
+  // Both errors describe the last attempt, so both go stale the moment a new
+  // one starts or the user edits the code. flowError belongs to the parent,
+  // hence the callback rather than a setter.
+  const clearErrors = () => {
+    setSubmitError('')
+    onClearFlowError?.()
+  }
 
   const isCodeComplete = code.length === 6 && !code.includes(' ')
 
@@ -50,7 +60,7 @@ export function VerificationScreen({
     if (isActionInFlight.current) return
     isActionInFlight.current = true
     setIsSubmitting(true)
-    setSubmitError('')
+    clearErrors()
 
     try {
       const { error } = await signIn.emailCode.verifyCode({ code })
@@ -109,7 +119,7 @@ export function VerificationScreen({
     if (isActionInFlight.current) return
     isActionInFlight.current = true
     setIsResending(true)
-    setSubmitError('')
+    clearErrors()
     setCode('')
 
     try {
@@ -144,7 +154,7 @@ export function VerificationScreen({
           <InputOTP
             value={code}
             onChange={(value) => {
-              setSubmitError('')
+              clearErrors()
               setCode(value)
             }}
             disabled={isVerifyInProgress}

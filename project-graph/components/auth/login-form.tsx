@@ -82,6 +82,7 @@ export function LoginForm({
         <VerificationScreen
           emailAddress={emailAddress}
           flowError={transferError}
+          onClearFlowError={() => setTransferError('')}
           onNeedsSignUp={handleTransfer}
           onStartOver={handleStartOver}
         />
