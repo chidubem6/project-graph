@@ -24,7 +24,7 @@ type EmailStepProps = {
 }
 
 export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStepProps) {
-  const { signIn, errors, fetchStatus } = useSignIn()
+  const { signIn, fetchStatus } = useSignIn()
   const [submitError, setSubmitError] = React.useState('')
 
   // Start sign-in with signUpIfMissing and send the email code.
@@ -88,7 +88,6 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
               className="h-9"
               required
             />
-            {errors.fields.identifier && <FieldError>{errors.fields.identifier.message}</FieldError>}
             {submitError && <FieldError>{submitError}</FieldError>}
           </Field>
 

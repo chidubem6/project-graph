@@ -25,7 +25,7 @@ export function VerificationScreen({
   onNeedsSignUp,
   onStartOver,
 }: VerificationScreenProps) {
-  const { signIn, errors, fetchStatus } = useSignIn()
+  const { signIn, fetchStatus } = useSignIn()
   const { finalizeSignIn } = useFinalizeAuth()
 
   const [code, setCode] = React.useState('')
@@ -130,9 +130,6 @@ export function VerificationScreen({
             className="justify-center"
             autoFocus
           />
-          {errors.fields.code && (
-            <FieldError className="text-center">{errors.fields.code.message}</FieldError>
-          )}
           {submitError && <FieldError className="text-center">{submitError}</FieldError>}
           {flowError && <FieldError className="text-center">{flowError}</FieldError>}
         </Field>
