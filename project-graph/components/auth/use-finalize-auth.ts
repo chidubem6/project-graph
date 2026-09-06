@@ -23,9 +23,10 @@ export function useFinalizeAuth() {
     return signIn.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
-          // Handle pending session tasks
+          // Not handled yet: tasks can be switched on from the Clerk dashboard
+          // without a code change, so log loudly if one ever shows up here.
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          console.log(session?.currentTask)
+          console.error('Unhandled session task:', session.currentTask)
           return
         }
 
@@ -38,9 +39,10 @@ export function useFinalizeAuth() {
     return signUp.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
-          // Handle pending session tasks
+          // Not handled yet: tasks can be switched on from the Clerk dashboard
+          // without a code change, so log loudly if one ever shows up here.
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
-          console.log(session?.currentTask)
+          console.error('Unhandled session task:', session.currentTask)
           return
         }
 
