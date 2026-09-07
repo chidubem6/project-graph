@@ -1,38 +1,35 @@
-import { PlusIcon } from "lucide-react"
+import { currentUser } from "@clerk/nextjs/server"
 
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state"
 import { mockProjects } from "@/components/dashboard/mock-projects"
-import { ProjectCard } from "@/components/dashboard/project-card"
-import { Button } from "@/components/ui/button"
+import { ProjectsSection } from "@/components/dashboard/projects-section"
+import { formatRelativeTime } from "@/lib/format-relative-time"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // The layout has already established there is a session; this call is only for
+  // the display name, so a null user degrades to the bare greeting rather than
+  // redirecting a second time.
+  const user = await currentUser()
+
   // Swap for the ownership-scoped Drizzle query in the project-list slice. Set
   // this to [] to preview the empty state until then.
-  const projects = mockProjects
+  const projects = mockProjects.map((project) => ({
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    updatedAtISO: project.updatedAt.toISOString(),
+    updatedLabel: formatRelativeTime(project.updatedAt),
+  }))
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Your Projects</h1>
-
-        {/* Inert until the project-create slice adds the name modal and its server action. */}
-        {projects.length > 0 && (
-          <Button size="lg">
-            <PlusIcon data-icon="inline-start" />
-            New Project
-          </Button>
-        )}
+      <div className="flex flex-col gap-1">
+        <p className="text-sm text-muted-foreground">
+          {user?.firstName ? `Hello, ${user.firstName}` : "Hello"}
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
       </div>
 
-      {projects.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
-      ) : (
-        <DashboardEmptyState />
-      )}
+      <ProjectsSection projects={projects} />
     </div>
   )
 }
