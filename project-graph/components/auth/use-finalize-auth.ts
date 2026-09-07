@@ -23,8 +23,9 @@ export function useFinalizeAuth() {
     return signIn.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
-          // Not handled yet: tasks can be switched on from the Clerk dashboard
-          // without a code change, so log loudly if one ever shows up here.
+          // Session tasks are not enabled for this app right now, so this path
+          // is unexpected. Keep it loud instead of routing to task UI that does
+          // not exist yet.
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
           console.error("Unhandled session task:", session.currentTask)
           return
@@ -39,8 +40,9 @@ export function useFinalizeAuth() {
     return signUp.finalize({
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
-          // Not handled yet: tasks can be switched on from the Clerk dashboard
-          // without a code change, so log loudly if one ever shows up here.
+          // Session tasks are not enabled for this app right now, so this path
+          // is unexpected. Keep it loud instead of routing to task UI that does
+          // not exist yet.
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
           console.error("Unhandled session task:", session.currentTask)
           return
