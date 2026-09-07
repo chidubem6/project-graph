@@ -19,6 +19,10 @@ export function useFinalizeAuth() {
     }
   }
 
+  const navigateToDashboard = (decorateUrl: (url: string) => string) => {
+    navigateTo(decorateUrl("/dashboard"))
+  }
+
   const finalizeSignIn = () => {
     return signIn.finalize({
       navigate: ({ session, decorateUrl }) => {
@@ -31,7 +35,7 @@ export function useFinalizeAuth() {
           return
         }
 
-        navigateTo(decorateUrl("/dashboard"))
+        navigateToDashboard(decorateUrl)
       },
     })
   }
@@ -48,10 +52,10 @@ export function useFinalizeAuth() {
           return
         }
 
-        navigateTo(decorateUrl("/dashboard"))
+        navigateToDashboard(decorateUrl)
       },
     })
   }
 
-  return { finalizeSignIn, finalizeSignUp }
+  return { finalizeSignIn, finalizeSignUp, navigateToDashboard }
 }
