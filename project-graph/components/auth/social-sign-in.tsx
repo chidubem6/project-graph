@@ -1,6 +1,6 @@
 'use client'
 
-import { useSignIn } from '@clerk/nextjs'
+import { useSignUp } from '@clerk/nextjs'
 import type { OAuthStrategy } from '@clerk/nextjs/types'
 
 import React from 'react'
@@ -12,33 +12,27 @@ import { getClerkErrorMessage } from './get-clerk-error-message'
 import { GitHubIcon, GoogleIcon } from './social-icons'
 
 export function SocialSignIn() {
-  const { signIn } = useSignIn()
   const [activeStrategy, setActiveStrategy] = React.useState<OAuthStrategy | null>(null)
   const [submitError, setSubmitError] = React.useState('')
 
-  const signInWith = async (strategy: OAuthStrategy) => {
+  const { signUp } = useSignUp()
+
+  const signUpWith = async (strategy: OAuthStrategy) => {
     setActiveStrategy(strategy)
     setSubmitError('')
 
     try {
-      const { error } = await signIn.create({
+      const { error } = await signUp.sso({
         strategy,
-        redirectUrl: '/sso-callback',
-        actionCompleteRedirectUrl: '/dashboard',
+        redirectCallbackUrl: '/sso-callback',
+        redirectUrl: '/dashboard', // Learn more about session tasks at https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
       })
-
       if (error) {
+        // See https://clerk.com/docs/guides/development/custom-flows/error-handling
+        // for more info on error handling
         setSubmitError(getClerkErrorMessage(error, "We couldn't continue with this provider."))
-        return
+        console.error(JSON.stringify(error, null, 2))
       }
-
-      const redirectUrl = signIn.firstFactorVerification.externalVerificationRedirectURL
-      if (redirectUrl) {
-        window.location.href = redirectUrl.toString()
-        return
-      }
-
-      setSubmitError("We couldn't continue with this provider. Please try again.")
     } catch (error) {
       console.error('Social sign-in threw before redirect:', error)
       setSubmitError(getClerkErrorMessage(error, "We couldn't continue with this provider."))
@@ -48,11 +42,11 @@ export function SocialSignIn() {
   }
 
   const handleGoogleSignIn = () => {
-    signInWith('oauth_google')
+    signUpWith('oauth_google')
   }
 
   const handleGitHubSignIn = () => {
-    signInWith('oauth_github')
+    signUpWith('oauth_github')
   }
 
   const isDisabled = activeStrategy !== null
