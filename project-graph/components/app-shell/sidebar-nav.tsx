@@ -26,16 +26,16 @@ const NAV_ITEMS: NavItem[] = [
       pathname === "/dashboard" || pathname.startsWith("/projects"),
   },
   {
-    href: "/templates",
+    href: "/dashboard/templates",
     label: "Templates",
     icon: LayoutTemplateIcon,
-    matches: (pathname) => pathname.startsWith("/templates"),
+    matches: (pathname) => pathname.startsWith("/dashboard/templates"),
   },
   {
-    href: "/settings",
+    href: "/dashboard/settings",
     label: "Settings",
     icon: SettingsIcon,
-    matches: (pathname) => pathname.startsWith("/settings"),
+    matches: (pathname) => pathname.startsWith("/dashboard/settings"),
   },
 ]
 
