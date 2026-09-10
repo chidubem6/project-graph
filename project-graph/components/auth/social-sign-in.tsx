@@ -1,6 +1,6 @@
 'use client'
 
-import { useSignUp } from '@clerk/nextjs'
+import { useSignIn } from '@clerk/nextjs'
 import type { OAuthStrategy } from '@clerk/nextjs/types'
 
 import React from 'react'
@@ -15,14 +15,14 @@ export function SocialSignIn() {
   const [activeStrategy, setActiveStrategy] = React.useState<OAuthStrategy | null>(null)
   const [submitError, setSubmitError] = React.useState('')
 
-  const { signUp } = useSignUp()
+  const { signIn } = useSignIn()
 
-  const signUpWith = async (strategy: OAuthStrategy) => {
+  const signInWith = async (strategy: OAuthStrategy) => {
     setActiveStrategy(strategy)
     setSubmitError('')
 
     try {
-      const { error } = await signUp.sso({
+      const { error } = await signIn.sso({
         strategy,
         redirectCallbackUrl: '/sso-callback',
         redirectUrl: '/dashboard', // Learn more about session tasks at https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
@@ -32,6 +32,7 @@ export function SocialSignIn() {
         // for more info on error handling
         setSubmitError(getClerkErrorMessage(error, "We couldn't continue with this provider."))
         console.error(JSON.stringify(error, null, 2))
+        return
       }
     } catch (error) {
       console.error('Social sign-in threw before redirect:', error)
@@ -42,11 +43,11 @@ export function SocialSignIn() {
   }
 
   const handleGoogleSignIn = () => {
-    signUpWith('oauth_google')
+    signInWith('oauth_google')
   }
 
   const handleGitHubSignIn = () => {
-    signUpWith('oauth_github')
+    signInWith('oauth_github')
   }
 
   const isDisabled = activeStrategy !== null
