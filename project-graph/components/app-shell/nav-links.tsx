@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { FolderIcon, LayoutTemplateIcon, SettingsIcon } from "lucide-react"
+import { FolderIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -12,16 +12,8 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
 }
 
-// Settings and Templates sit under /dashboard so an exact href comparison is
-// enough to pick the active tab — no route prefix overlaps with another.
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Projects", icon: FolderIcon },
-  {
-    href: "/dashboard/templates",
-    label: "Templates",
-    icon: LayoutTemplateIcon,
-  },
-  { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ]
 
 export function NavLinks() {
