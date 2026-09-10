@@ -111,6 +111,12 @@ export default function Page() {
           return
         }
 
+        // If the SSO flow started as a sign-up, Clerk can return directly
+        // with profile fields still required.
+        if (signUp.status === 'missing_requirements') {
+          return router.push('/sign-in/continue')
+        }
+
         // If the sign-in requires MFA or a new password
         // For this example, we'll navigate back to the sign-in page assuming that it handles these cases
         if (signIn.status === 'needs_second_factor' || signIn.status === 'needs_new_password') {
