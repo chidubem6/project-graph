@@ -1,29 +1,22 @@
 "use client"
 
 import { useSignIn } from "@clerk/nextjs"
-import Link from "next/link"
 import React from "react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 
 import { getClerkErrorMessage } from "./get-clerk-error-message"
 
-type EmailStepProps = {
+type EmailFormProps = {
   emailAddress: string
   onEmailChange: (emailAddress: string) => void
   onCodeSent: () => void
 }
 
-export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStepProps) {
+export function EmailForm({ emailAddress, onEmailChange, onCodeSent }: EmailFormProps) {
   const { signIn, fetchStatus } = useSignIn()
   const [submitError, setSubmitError] = React.useState("")
 
@@ -79,55 +72,40 @@ export function EmailStep({ emailAddress, onEmailChange, onCodeSent }: EmailStep
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
-        <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <Link href="/" className="text-base font-semibold tracking-tight">
-              Structred.
-            </Link>
-            <h1 className="text-xl font-bold">Continue to Structred</h1>
-            <FieldDescription>Sign in or create an account</FieldDescription>
-          </div>
+    <form onSubmit={handleSubmit}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="email">Email address</FieldLabel>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={emailAddress}
+            onChange={(e) => {
+              setSubmitError("")
+              onEmailChange(e.target.value)
+            }}
+            autoComplete="email"
+            placeholder="you@example.com"
+            className="h-9"
+            disabled={isSubmitInProgress}
+            required
+          />
+          {submitError && <FieldError>{submitError}</FieldError>}
+        </Field>
 
-          <Field>
-            <FieldLabel htmlFor="email">Email address</FieldLabel>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={emailAddress}
-              onChange={(e) => {
-                setSubmitError("")
-                onEmailChange(e.target.value)
-              }}
-              autoComplete="email"
-              placeholder="you@example.com"
-              className="h-9"
-              disabled={isSubmitInProgress}
-              required
-            />
-            {submitError && <FieldError>{submitError}</FieldError>}
-          </Field>
-
-          <Field>
-            {isSubmitInProgress ? (
-              <div className="flex h-10 items-center justify-center">
-                <Spinner />
-              </div>
-            ) : (
-              <Button type="submit" size="lg" className="w-full">
-                Continue
-              </Button>
-            )}
-          </Field>
-        </FieldGroup>
-      </form>
-
-      <FieldDescription className="px-6 text-center">
-        By continuing, you agree to our <a href="#">Terms of Service</a> and{" "}
-        <a href="#">Privacy Policy</a>.
-      </FieldDescription>
-    </>
+        <Field>
+          {isSubmitInProgress ? (
+            <div className="flex h-10 items-center justify-center">
+              <Spinner />
+            </div>
+          ) : (
+            <Button type="submit" size="lg" className="w-full">
+              Continue
+            </Button>
+          )}
+        </Field>
+      </FieldGroup>
+    </form>
   )
 }

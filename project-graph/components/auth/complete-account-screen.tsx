@@ -16,38 +16,66 @@ import {
 import { Input } from "@/components/ui/input"
 
 type CompleteAccountScreenProps = {
-  onStartOver: () => void
+  onStartOver?: () => void
 }
 
 export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProps) {
   const { signUp, fetchStatus } = useSignUp()
   const { finalizeSignUp } = useFinalizeAuth()
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const [firstName, setFirstName] = useState<string | null>(null)
+  const [lastName, setLastName] = useState<string | null>(null)
   const [nameError, setNameError] = useState("")
   const [submitError, setSubmitError] = useState("")
+  const currentFirstName = firstName ?? signUp.firstName ?? ""
+  const currentLastName = lastName ?? signUp.lastName ?? ""
 
-  const isCreateAccountDisabled = fetchStatus === "fetching" || firstName.trim() === "" || lastName.trim() === ""
+  const needsFirstName = signUp.missingFields.includes("first_name")
+  const needsLastName = signUp.missingFields.includes("last_name")
+  const unsupportedMissingFields = signUp.missingFields.filter(
+    (field) => field !== "first_name" && field !== "last_name",
+  )
+  const hasUnsupportedMissingFields = unsupportedMissingFields.length > 0
+  const hasSupportedMissingFields = needsFirstName || needsLastName
+
+  const isCreateAccountDisabled =
+    fetchStatus === "fetching" ||
+    hasUnsupportedMissingFields ||
+    !hasSupportedMissingFields ||
+    (needsFirstName && currentFirstName.trim() === "") ||
+    (needsLastName && currentLastName.trim() === "")
 
   // Submit missing requirements to complete sign-up.
   const handleMissingRequirements = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError("")
 
-    const trimmedFirstName = firstName.trim()
-    const trimmedLastName = lastName.trim()
+    const trimmedFirstName = currentFirstName.trim()
+    const trimmedLastName = currentLastName.trim()
 
-    if (trimmedFirstName === "" || trimmedLastName === "") {
-      setNameError("First and last name are required.")
+    if (hasUnsupportedMissingFields) {
+      setSubmitError(
+        `We need additional account information that this screen does not support yet: ${unsupportedMissingFields.join(", ")}.`,
+      )
+      return
+    }
+
+    const missingNames = [
+      needsFirstName && trimmedFirstName === "" ? "first name" : "",
+      needsLastName && trimmedLastName === "" ? "last name" : "",
+    ].filter(Boolean)
+
+    if (missingNames.length > 0) {
+      setNameError(`${missingNames.join(" and ")} ${missingNames.length === 1 ? "is" : "are"} required.`)
       return
     }
 
     setNameError("")
 
-    const { error } = await signUp.update({
-      firstName: trimmedFirstName,
-      lastName: trimmedLastName,
-    })
+    const updateParams: { firstName?: string; lastName?: string } = {}
+    if (needsFirstName) updateParams.firstName = trimmedFirstName
+    if (needsLastName) updateParams.lastName = trimmedLastName
+
+    const { error } = await signUp.update(updateParams)
     if (error) {
       console.error(JSON.stringify(error, null, 2))
       setSubmitError(
@@ -86,44 +114,62 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-xl font-bold">Complete your account</h1>
             <FieldDescription>
-              Your email has been verified. Please complete the following to create your account.
+              Please complete the following to create your account.
             </FieldDescription>
           </div>
 
-          <Field>
-            <FieldLabel htmlFor="firstName">First name</FieldLabel>
-            <Input
-              id="firstName"
-              name="firstName"
-              value={firstName}
-              onChange={(e) => {
-                setNameError("")
-                setSubmitError("")
-                setFirstName(e.target.value)
-              }}
-              autoComplete="given-name"
-              className="h-9"
-              required
-            />
-          </Field>
+          {needsFirstName && (
+            <Field>
+              <FieldLabel htmlFor="firstName">First name</FieldLabel>
+              <Input
+                id="firstName"
+                name="firstName"
+                value={currentFirstName}
+                onChange={(e) => {
+                  setNameError("")
+                  setSubmitError("")
+                  setFirstName(e.target.value)
+                }}
+                autoComplete="given-name"
+                className="h-9"
+                required
+              />
+            </Field>
+          )}
 
-          <Field>
-            <FieldLabel htmlFor="lastName">Last name</FieldLabel>
-            <Input
-              id="lastName"
-              name="lastName"
-              value={lastName}
-              onChange={(e) => {
-                setNameError("")
-                setSubmitError("")
-                setLastName(e.target.value)
-              }}
-              autoComplete="family-name"
-              className="h-9"
-              required
-            />
-            <FieldError>{nameError}</FieldError>
-          </Field>
+          {needsLastName && (
+            <Field>
+              <FieldLabel htmlFor="lastName">Last name</FieldLabel>
+              <Input
+                id="lastName"
+                name="lastName"
+                value={currentLastName}
+                onChange={(e) => {
+                  setNameError("")
+                  setSubmitError("")
+                  setLastName(e.target.value)
+                }}
+                autoComplete="family-name"
+                className="h-9"
+                required
+              />
+            </Field>
+          )}
+
+          {nameError && <FieldError>{nameError}</FieldError>}
+
+          {hasUnsupportedMissingFields && (
+            <FieldError>
+              We need additional account information that this screen does not support yet:{" "}
+              {unsupportedMissingFields.join(", ")}.
+            </FieldError>
+          )}
+
+          {!hasSupportedMissingFields && !hasUnsupportedMissingFields && (
+            <FieldDescription className="text-center">
+              Your account is not missing any supported profile fields.
+            </FieldDescription>
+          )}
 
           {submitError && <FieldError>{submitError}</FieldError>}
 
@@ -135,7 +181,7 @@ export function CompleteAccountScreen({ onStartOver }: CompleteAccountScreenProp
         </FieldGroup>
       </form>
 
-      <button onClick={onStartOver}>Start over</button>
+      {onStartOver && <button onClick={onStartOver}>Start over</button>}
     </>
   )
 }

@@ -5,12 +5,12 @@ import React from "react"
 
 import { cn } from "@/lib/utils"
 import { CompleteAccountScreen } from "./complete-account-screen"
-import { EmailStep } from "./email-step"
+import { IdentifyScreen } from "./identify-screen"
 import { getClerkErrorMessage } from "./get-clerk-error-message"
 import { useFinalizeAuth } from "./use-finalize-auth"
 import { VerificationScreen } from "./verification-screen"
 
-type Step = "email" | "verify" | "complete"
+type Step = "identify" | "verify" | "complete"
 
 export function LoginForm({
   className,
@@ -20,7 +20,7 @@ export function LoginForm({
   const { signUp } = useSignUp()
   const { finalizeSignUp } = useFinalizeAuth()
 
-  const [step, setStep] = React.useState<Step>("email")
+  const [step, setStep] = React.useState<Step>("identify")
   const [emailAddress, setEmailAddress] = React.useState("")
   const [transferError, setTransferError] = React.useState("")
 
@@ -65,13 +65,13 @@ export function LoginForm({
     signIn.reset()
     signUp.reset()
     setTransferError("")
-    setStep("email")
+    setStep("identify")
   }
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {step === "email" && (
-        <EmailStep
+      {step === "identify" && (
+        <IdentifyScreen
           emailAddress={emailAddress}
           onEmailChange={setEmailAddress}
           onCodeSent={() => setStep("verify")}
