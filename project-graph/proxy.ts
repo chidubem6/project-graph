@@ -1,12 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-// Deny by default: anything not listed here needs a session. A new route under
-// (app) is therefore guarded the moment it lands, rather than whenever someone
-// remembers to add it to an allowlist of protected paths.
+// Deny by default: anything not listed here needs a session. A new route is
+// therefore guarded the moment it lands, rather than whenever someone remembers
+// to add it to an allowlist of protected paths.
 const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sso-callback',
+  // (.*) keeps Clerk's nested steps public too, e.g. /sign-in/sso-callback.
+  `${process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL}(.*)`,
+  `${process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL}(.*)`,
   // Clerk's auto-proxy handles its own auth; protecting it would loop.
   '/__clerk(.*)',
 ]);

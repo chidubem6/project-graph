@@ -69,7 +69,7 @@
 :root {
   color-scheme: dark;
 
-  /* Structred design tokens — see context/ui-context.md. Dark only. */
+  /* Structured design tokens — see context/ui-context.md. Dark only. */
   --bg-base: #080809;
   --bg-surface: #111114;
   --bg-elevated: #18181c;
