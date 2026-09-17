@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { ReactNode, RefObject } from "react"
 
 import {
   Dialog,
@@ -18,6 +18,8 @@ interface EditorDialogProps {
   description?: string
   /** Action buttons, rendered right-aligned in the footer. */
   footer?: ReactNode
+  /** Element to focus when the dialog opens. Defaults to the first tabbable one. */
+  initialFocus?: RefObject<HTMLElement | null>
   children?: ReactNode
 }
 
@@ -29,11 +31,15 @@ export function EditorDialog({
   title,
   description,
   footer,
+  initialFocus,
   children,
 }: EditorDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-5 rounded-3xl border border-surface-border bg-elevated/95 p-6 text-copy-primary ring-0 backdrop-blur-md sm:max-w-md">
+      <DialogContent
+        initialFocus={initialFocus}
+        className="gap-5 rounded-3xl border border-surface-border bg-elevated/95 p-6 text-copy-primary ring-0 backdrop-blur-md sm:max-w-md"
+      >
         <DialogHeader>
           <DialogTitle className="text-copy-primary">{title}</DialogTitle>
           {description && (
