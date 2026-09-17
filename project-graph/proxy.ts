@@ -1,6 +1,18 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-export default clerkMiddleware();
+// Deny by default: anything not listed here needs a session. A new route under
+// (app) is therefore guarded the moment it lands, rather than whenever someone
+// remembers to add it to an allowlist of protected paths.
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  // Clerk's auto-proxy handles its own auth; protecting it would loop.
+  '/__clerk(.*)',
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublicRoute(req)) await auth.protect();
+});
 
 export const config = {
   matcher: [
