@@ -13,7 +13,7 @@ Legend: `[ ]` open · `[x]` done · `[~]` won't fix / deferred
 
 ## Blocking — found after merge
 
-### [ ] 0. Proxy blocks `/sso-callback`, breaking social sign-in on `master`
+### [x] 0. Proxy blocks `/sso-callback`, breaking social sign-in on `master`
 **Where:** `project-graph/proxy.ts:6-11`
 
 The branch was cut from `b2f0f31`. PR #2 (social auth, `171e4d8`) landed on `master` afterwards and added
@@ -36,7 +36,22 @@ The auth subagent's conclusions ("no other public route needed; social buttons r
 **Fix sketch:** add `'/sso-callback'` to `isPublicRoute`. Then check a Google/GitHub sign-in end to end
 in a signed-out browser.
 
-**Decision:**
+**Decision:** FIXED at the proxy. Added `'/sso-callback'` — exact path, no `(.*)`, so it does not repeat
+#9's prefix problem. Signed-out requests against `next dev`, before → after:
+
+| Route | Before | After |
+|---|---|---|
+| `/sso-callback` | 307 → `/sign-in` | 200 |
+| `/sign-in`, `/sign-in/continue` | 200 | 200 |
+| `/dashboard` | 307 → `/sign-in` | 307 → `/sign-in` |
+| `/sso-callback-x` | — | 307 → `/sign-in` |
+
+`next build` lists five routes, each now either deliberately public or protected. `tsc`, `eslint` and
+`next build` clean. (A `tsc` failure on `.next/types/validator.ts` pointing at `app/sign-in/page.js` was
+stale generated types from the branch checkout, not this change; a build regenerates them.)
+
+**Not yet verified:** a real Google/GitHub round trip in a signed-out browser. The probe proves the
+proxy lets the callback page render, not that the OAuth flow completes.
 
 ---
 

@@ -6,6 +6,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
+  '/sso-callback',
   // Clerk's auto-proxy handles its own auth; protecting it would loop.
   '/__clerk(.*)',
 ]);
