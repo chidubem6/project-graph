@@ -2,8 +2,9 @@ import { auth } from "@clerk/nextjs/server"
 
 import { SidebarNav } from "@/components/app-shell/sidebar-nav"
 
-// Guarding the route group rather than the individual page means /projects/[projectId]
-// is protected the moment it lands, without repeating the check.
+// proxy.ts is the actual gate — layouts and pages render in parallel, so a check
+// here cannot stop a page from starting its own work. This is defence in depth,
+// and it gives the tree a non-null session to read from.
 export default async function AppLayout({
   children,
 }: Readonly<{
