@@ -46,3 +46,6 @@ next-env.d.ts
 /.agents/
 /.claude/skills/
 skills-lock.json
+
+# local issue notes
+/context/current-issues.md
