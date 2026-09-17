@@ -4,11 +4,6 @@ export type DashboardProjectView = {
   id: string
   name: string
   description: string
-  updatedAtISO: string
-  // Pre-formatted on the server. Formatting relative to a client clock would
-  // re-render "12 minutes ago" against a slightly different now and trip a
-  // hydration mismatch, since the grid is filtered client-side.
-  updatedLabel: string
 }
 
 export function ProjectCard({ project }: { project: DashboardProjectView }) {
@@ -23,10 +18,6 @@ export function ProjectCard({ project }: { project: DashboardProjectView }) {
           leave every card the same height across a row. */}
       <span className="line-clamp-3 text-sm text-muted-foreground">
         {project.description}
-      </span>
-
-      <span className="mt-auto pt-2 text-xs text-muted-foreground">
-        Updated <time dateTime={project.updatedAtISO}>{project.updatedLabel}</time>
       </span>
     </Link>
   )

@@ -2,7 +2,6 @@ import { currentUser } from "@clerk/nextjs/server"
 
 import { mockProjects } from "@/components/dashboard/mock-projects"
 import { ProjectsSection } from "@/components/dashboard/projects-section"
-import { formatRelativeTime } from "@/lib/format-relative-time"
 
 export default async function DashboardPage() {
   // The layout has already established there is a session; this call is only for
@@ -16,8 +15,6 @@ export default async function DashboardPage() {
     id: project.id,
     name: project.name,
     description: project.description,
-    updatedAtISO: project.updatedAt.toISOString(),
-    updatedLabel: formatRelativeTime(project.updatedAt),
   }))
 
   return (
