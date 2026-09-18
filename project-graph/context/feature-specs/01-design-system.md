@@ -17,7 +17,7 @@ Do not modify the generated `components/ui/*` files after installation.
 
 Also Install `lucide-react`.
 
-Create `lib/utils.ts` with a reusable `cn()` helper for merging Tailwind classes.
+Use `cn()` for merging Tailwind classes, imported directly from the `cn` package (`import { cn } from "cn"`). Superseded 2026-09-17: this originally specified a `lib/utils.ts` helper, which has been removed.
 
 Ensure all components match the existing dark theme in `globals.css`.
 
