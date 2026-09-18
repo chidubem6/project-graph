@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- 04 Project dialogue — editor home, project dialogs and sidebar actions (done)
+- 05 Prisma — project data models, Prisma client singleton and first migration (done)
 
 ## Current Goal
 
-- Pick the next feature spec after 04 Project dialogue.
+- Pick the next feature spec after 05 Prisma (likely the project API slice that replaces `lib/mock-projects.ts`).
 
 ## Completed
 
@@ -50,6 +50,14 @@ Update this file whenever the current phase, active feature, or implementation s
   - [x] `editor-dialog.tsx` — added an optional `initialFocus` prop forwarded to the Base UI popup.
   - [x] Verified: `tsc`, `eslint` and `next build` pass. Driven in a browser through a temporary public `/preview-check` route (since removed, proxy restored): editor home renders, both `New Project` entry points open the create dialog, the slug preview tracks typing, rename prefills/auto-focuses and submits on Enter, delete shows the destructive confirm, shared projects show no actions, and at 390px tapping the scrim closes the sidebar. Console clean apart from Clerk's pre-existing dev-keys warning.
 
+- 05 Prisma (`context/feature-specs/05-prisma.md`)
+  - [x] `prisma/models/project.prisma` (multi-file schema; `prisma/schema.prisma` keeps the generator and datasource). `Project`: `ownerId` (Clerk user ID), `name`, optional `description`, `status` (`ProjectStatus` enum `DRAFT` | `ARCHIVED`, default `DRAFT`), optional `canvasJsonPath`, `createdAt`/`updatedAt`; indexes on `ownerId` and `createdAt`. `ProjectCollaborator`: `project` relation with `onDelete: Cascade`, `email`, `createdAt`; unique `[projectId, email]`; indexes on `email` and `[projectId, createdAt]`. The only fields beyond the spec are the ones Prisma requires: the `cuid()` `id` on each model and the `Project.collaborators` back-relation.
+  - [x] `lib/prisma.ts` exports one `prisma` instance. A `DATABASE_URL` starting with `prisma+postgres://` goes to `new PrismaClient({ accelerateUrl })` (built into Prisma 7, so no `@prisma/extension-accelerate`); anything else goes to `@prisma/adapter-pg`. Outside production the instance is cached on `globalThis`, so hot reloads reuse it. Throws if `DATABASE_URL` is unset.
+  - [x] Client generated to `app/generated/prisma` (gitignored), imported as `@/app/generated/prisma/client`.
+  - [x] `prisma7.config.ts` loads `.env.local` before `.env`, matching Next.js precedence. Before this change the CLI read only `.env`, which holds a local `prisma dev` URL, while the app reads the remote Prisma Postgres URL in `.env.local`, so they would have hit different databases. Chidubem chose the remote database.
+  - [x] Migration `20260918035438_init` applied to the remote Prisma Postgres (the database was empty beforehand).
+  - [x] Verified: `prisma validate`, `tsc`, `eslint` and `npm run build` pass. A throwaway script run against the migrated database showed that repeated imports return the same instance and it is cached on `globalThis`, `status` defaults to `DRAFT`, a duplicate project/email fails with `P2002`, and deleting a project cascades to its collaborators. The test row was removed. The Accelerate branch constructs a client, but it has not been queried because the local `prisma dev` server was not running.
+
 ## In Progress
 
 - None.
@@ -62,8 +70,13 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - The Clerk instance's application name is still "Project Graph" (the sign-in card reads "Sign in to Project Graph"). Rename it to Structured in the Clerk dashboard.
 - `docs/adr/0001-v1-technology-foundations.md` still lists email/password auth. Whether a password field appears is now controlled by the Clerk dashboard settings.
+- The generated Prisma client (`app/generated/prisma`) is gitignored, so a fresh clone or a Vercel build only works if something runs `prisma generate` first. Common fixes are a `postinstall` script or `prisma generate && next build`. Not added, because spec 05 doesn't cover it.
+- `pg` warns that `sslmode=require` in the remote `DATABASE_URL` is treated as `verify-full` today and will change meaning in pg v9. Setting `sslmode=verify-full` explicitly keeps the current behaviour.
+- `.env` still holds the local `prisma dev` URL. Both the CLI and the app now take `DATABASE_URL` from `.env.local`, so that value is only used if `.env.local` drops its `DATABASE_URL`.
 
 ## Architecture Decisions
+
+- Prisma CLI and the Next.js app must read the same `DATABASE_URL`: `prisma7.config.ts` loads `.env.local` then `.env`, and dotenv keeps the first value, the same precedence Next.js uses. Schema files live under `prisma/` (the config points at the folder), with models in `prisma/models/*.prisma`.
 
 - Project dialog state lives in one hook (`hooks/use-project-dialogs.ts`) rather than in the sidebar, so the editor home and the sidebar open the same dialogs. The dialogs themselves are presentational and take values plus callbacks.
 - Project ownership is a list, not a flag: the sidebar renders rename/delete only for the list it is given handlers for. When the API slice lands, "owned" becomes whatever the server returns for the signed-in user.

@@ -1,0 +1,33 @@
+enum ProjectStatus {
+  DRAFT
+  ARCHIVED
+}
+
+model Project {
+  id             String                @id @default(cuid())
+  /// Clerk user ID of the project owner.
+  ownerId        String
+  name           String
+  description    String?
+  status         ProjectStatus         @default(DRAFT)
+  /// Vercel Blob URL of the canvas snapshot; unset until the canvas is first saved.
+  canvasJsonPath String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  collaborators  ProjectCollaborator[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model ProjectCollaborator {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  email     String
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, email])
+  @@index([email])
+  @@index([projectId, createdAt])
+}
