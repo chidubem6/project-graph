@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg"
 
-import { PrismaClient } from "@/app/generated/prisma/client"
+import { Prisma, PrismaClient } from "@/app/generated/prisma/client"
 
 // Next.js re-evaluates modules on every hot reload in development; without a
 // cache on `globalThis` each reload would open a fresh connection pool.
@@ -25,4 +25,10 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma
+}
+
+// `update` and `delete` throw P2025 when their `where` matches no row, which
+// callers usually want to answer as a 404 rather than let through as a 500.
+export function isRecordNotFound(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025"
 }

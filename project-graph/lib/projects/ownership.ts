@@ -1,5 +1,4 @@
-import { Prisma } from "@/app/generated/prisma/client"
-import { errorResponse } from "@/lib/api-response"
+import { errorResponse } from "@/lib/http/api-response"
 import { prisma } from "@/lib/prisma"
 
 // Returns the response to send when `userId` may not mutate the project, or
@@ -17,10 +16,4 @@ export async function denyUnlessOwner(projectId: string, userId: string): Promis
     return errorResponse(403, "Forbidden")
   }
   return null
-}
-
-// Mutations also filter on `ownerId`, so a project deleted between the owner
-// check and the write surfaces as P2025 rather than touching another row.
-export function isRecordNotFound(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025"
 }

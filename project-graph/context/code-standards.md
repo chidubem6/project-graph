@@ -43,7 +43,7 @@
 
 ## File Organization
 
-- `lib/` — shared infrastructure: Prisma client, auth helpers, utilities.
+- `lib/` — shared infrastructure: Prisma client, auth helpers, utilities. Group related helpers into a domain folder (`lib/http/`, `lib/projects/`) and drop the prefix the folder already gives (`lib/projects/name.ts`, not `lib/projects/project-name.ts`). Single-purpose infrastructure stays at the top level (`lib/prisma.ts`). Import files directly: no `index.ts` barrels, because a folder can mix client-safe and server-only files.
 - `trigger/` — all durable background tasks and AI workflows.
 - `components/` — UI composition only; no business logic.
 - `app/api/` — route handlers for auth, triggering, and persistence.

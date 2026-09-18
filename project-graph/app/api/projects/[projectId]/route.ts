@@ -1,10 +1,10 @@
 import { auth } from "@clerk/nextjs/server"
 
-import { errorResponse } from "@/lib/api-response"
-import { prisma } from "@/lib/prisma"
-import { parseProjectRename } from "@/lib/project-name"
-import { denyUnlessOwner, isRecordNotFound } from "@/lib/project-ownership"
-import { readJsonObject } from "@/lib/request-body"
+import { errorResponse } from "@/lib/http/api-response"
+import { readJsonObject } from "@/lib/http/request-body"
+import { isRecordNotFound, prisma } from "@/lib/prisma"
+import { parseProjectRename } from "@/lib/projects/name"
+import { denyUnlessOwner } from "@/lib/projects/ownership"
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/projects/[projectId]">) {
   const { userId } = await auth()
@@ -28,6 +28,8 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/projects/[
     return errorResponse(400, name.error)
   }
 
+  // The write also filters on `ownerId`, so a project deleted between the owner
+  // check and here surfaces as P2025 rather than touching another row.
   try {
     const project = await prisma.project.update({
       where: { id: projectId, ownerId: userId },

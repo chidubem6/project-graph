@@ -1,9 +1,9 @@
 import { auth } from "@clerk/nextjs/server"
 
-import { errorResponse } from "@/lib/api-response"
+import { errorResponse } from "@/lib/http/api-response"
+import { readJsonObject } from "@/lib/http/request-body"
 import { prisma } from "@/lib/prisma"
-import { parseNewProjectName } from "@/lib/project-name"
-import { readJsonObject } from "@/lib/request-body"
+import { parseNewProjectName } from "@/lib/projects/name"
 
 export async function GET() {
   const { userId } = await auth()

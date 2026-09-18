@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 
-import { errorResponse } from "@/lib/api-response"
+import { errorResponse } from "@/lib/http/api-response"
 
 // Fall back to the defaults so a deploy missing these vars doesn't lock
 // signed-out users out of the sign-in page.

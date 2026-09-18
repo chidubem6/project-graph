@@ -7,7 +7,7 @@ import { EditorNavbar } from "@/components/editor/editor-navbar"
 import { ProjectDialogs } from "@/components/editor/project-dialogs"
 import { ProjectSidebar } from "@/components/editor/project-sidebar"
 import { useProjectDialogs } from "@/hooks/use-project-dialogs"
-import { MY_PROJECTS, SHARED_PROJECTS } from "@/lib/mock-projects"
+import { MY_PROJECTS, SHARED_PROJECTS } from "@/lib/projects/mock"
 
 export function EditorWorkspace() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
