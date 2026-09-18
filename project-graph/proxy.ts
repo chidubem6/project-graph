@@ -1,5 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 
+import { errorResponse } from "@/lib/api-response"
+
 // Fall back to the defaults so a deploy missing these vars doesn't lock
 // signed-out users out of the sign-in page.
 const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ?? "/sign-in"
@@ -16,10 +18,25 @@ const isPublicRoute = createRouteMatcher([
   "/__clerk(.*)",
 ])
 
+const isApiRoute = createRouteMatcher(["/api(.*)"])
+
 export const proxy = clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect()
+  if (isPublicRoute(request)) {
+    return
   }
+
+  // auth.protect() answers a signed-out fetch with 404, which would tell API
+  // clients the route doesn't exist. API routes get an explicit 401 instead;
+  // pages keep the redirect to sign-in.
+  if (isApiRoute(request)) {
+    const { userId } = await auth()
+    if (!userId) {
+      return errorResponse(401, "Unauthorized")
+    }
+    return
+  }
+
+  await auth.protect()
 })
 
 export const config = {

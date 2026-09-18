@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- 05 Prisma — project data models, Prisma client singleton and first migration (done)
+- 06 Project APIs — backend REST routes for listing, creating, renaming and deleting projects (done)
 
 ## Current Goal
 
-- Pick the next feature spec after 05 Prisma (likely the project API slice that replaces `lib/mock-projects.ts`).
+- Pick the next feature spec after 06 Project APIs (likely wiring the editor's project list and dialogs to the API, replacing `lib/mock-projects.ts`).
 
 ## Completed
 
@@ -58,6 +58,13 @@ Update this file whenever the current phase, active feature, or implementation s
   - [x] Migration `20260918035438_init` applied to the remote Prisma Postgres (the database was empty beforehand).
   - [x] Verified: `prisma validate`, `tsc`, `eslint` and `npm run build` pass. A throwaway script run against the migrated database showed that repeated imports return the same instance and it is cached on `globalThis`, `status` defaults to `DRAFT`, a duplicate project/email fails with `P2002`, and deleting a project cascades to its collaborators. The test row was removed. The Accelerate branch constructs a client, but it has not been queried because the local `prisma dev` server was not running.
 
+- 06 Project APIs (`context/feature-specs/06-project-apis.md`)
+  - [x] `app/api/projects/route.ts` — `GET` returns `{ projects }` for `ownerId = userId`, newest first (`createdAt desc`). `POST` returns `201 { project }`; `ownerId` is the Clerk user ID; no `id` is passed, so the schema's `cuid()` default assigns it. A missing, empty or whitespace-only `name` becomes `Untitled Project`; other names are trimmed.
+  - [x] `app/api/projects/[projectId]/route.ts` — `PATCH` takes `{ name }` (required, trimmed, non-empty) and returns `{ project }`; `DELETE` returns `204` with no body (collaborators cascade). Both run `denyUnlessOwner` first (404 if the project doesn't exist, 403 if someone else owns it). In `PATCH` it runs before the body is parsed, so a non-owner gets 403 even when the body is invalid (a CodeRabbit finding: originally a bad body returned 400 first). The write itself also filters on `ownerId`, so a project deleted between the check and the write returns 404 (Prisma `P2025`) rather than 500.
+  - [x] Shared helpers in `lib/`: `api-response.ts` (`errorResponse`, error body is always `{ error }`), `request-body.ts` (`readJsonObject`: an empty body reads as `{}`, a non-object or invalid JSON returns 400), `project-name.ts` (`DEFAULT_PROJECT_NAME`, create/rename parsing), `project-ownership.ts` (`denyUnlessOwner`, `isRecordNotFound`).
+  - [x] `proxy.ts` — signed-out requests to `/api(.*)` get `401 { error: "Unauthorized" }` from the proxy. Before this, `auth.protect()` answered them with 404. Pages still use `auth.protect()`. Each handler also checks `auth()` itself, because it needs `userId`.
+  - [x] Verified: `npm run build` (both routes listed as dynamic), `tsc` and `eslint` pass. Against `next start`, signed-out `GET`/`POST`/`PATCH`/`DELETE` all return `401` JSON from the proxy. The handlers were then called against the migrated database with Clerk's `auth()` stubbed to two throwaway user IDs, and all 23 checks passed: 401 when signed out; create with no body, a blank name and a trimmed name; `cuid` IDs; 400 for a non-string name, invalid JSON, an array body and an empty or missing rename; each user lists only their own projects; a non-owner's `PATCH`/`DELETE` returns 403 and leaves the row unchanged; the owner can rename (200) and delete (204); a missing project returns 404. The test rows were removed afterwards. Not exercised: a real Clerk session end to end (still no test account).
+
 ## In Progress
 
 - None.
@@ -72,10 +79,13 @@ Update this file whenever the current phase, active feature, or implementation s
 - `docs/adr/0001-v1-technology-foundations.md` still lists email/password auth. Whether a password field appears is now controlled by the Clerk dashboard settings.
 - The generated Prisma client (`app/generated/prisma`) is gitignored, so a fresh clone or a Vercel build only works if something runs `prisma generate` first. Common fixes are a `postinstall` script or `prisma generate && next build`. Not added, because spec 05 doesn't cover it.
 - `pg` warns that `sslmode=require` in the remote `DATABASE_URL` is treated as `verify-full` today and will change meaning in pg v9. Setting `sslmode=verify-full` explicitly keeps the current behaviour.
+- `GET /api/projects` returns owned projects only. Collaborator (shared) projects are matched by email, which the API would need to read from Clerk. That belongs to whichever spec wires up the Shared tab.
+- Project names have no maximum length: spec 06 doesn't set one and the column is unbounded `text`. Add a limit if a later spec asks for one.
 - `.env` still holds the local `prisma dev` URL. Both the CLI and the app now take `DATABASE_URL` from `.env.local`, so that value is only used if `.env.local` drops its `DATABASE_URL`.
 
 ## Architecture Decisions
 
+- API routes answer signed-out requests with `401` JSON from `proxy.ts`, not `auth.protect()` (which returns 404 for non-page requests). The proxy still denies by default, so a new API route is guarded as soon as it exists. Handlers still call `auth()` for the `userId`. API error bodies are always `{ error: string }`. Owner-only mutations call `denyUnlessOwner` and also scope the write to `{ id, ownerId }`.
 - Prisma CLI and the Next.js app must read the same `DATABASE_URL`: `prisma7.config.ts` loads `.env.local` then `.env`, and dotenv keeps the first value, the same precedence Next.js uses. Schema files live under `prisma/` (the config points at the folder), with models in `prisma/models/*.prisma`.
 
 - Project dialog state lives in one hook (`hooks/use-project-dialogs.ts`) rather than in the sidebar, so the editor home and the sidebar open the same dialogs. The dialogs themselves are presentational and take values plus callbacks.
