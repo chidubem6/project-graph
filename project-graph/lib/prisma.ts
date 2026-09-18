@@ -32,3 +32,8 @@ if (process.env.NODE_ENV !== "production") {
 export function isRecordNotFound(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025"
 }
+
+// P2002: a `create` or `update` collided with a unique constraint.
+export function isUniqueConstraintViolation(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+}

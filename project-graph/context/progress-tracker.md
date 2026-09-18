@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- 06 Project APIs — backend REST routes for listing, creating, renaming and deleting projects (done)
+- 07 Wire editor home — the editor sidebar and project dialogs use real project data and the project API (done)
 
 ## Current Goal
 
-- Pick the next feature spec after 06 Project APIs (likely wiring the editor's project list and dialogs to the API, replacing `lib/projects/mock.ts`).
+- Pick the next feature spec after 07 (likely the project workspace canvas, which mounts inside `/editor/[projectId]`).
 
 ## Completed
 
@@ -65,6 +65,17 @@ Update this file whenever the current phase, active feature, or implementation s
   - [x] `proxy.ts` — signed-out requests to `/api(.*)` get `401 { error: "Unauthorized" }` from the proxy. Before this, `auth.protect()` answered them with 404. Pages still use `auth.protect()`. Each handler also checks `auth()` itself, because it needs `userId`.
   - [x] Verified: `npm run build` (both routes listed as dynamic), `tsc` and `eslint` pass. Against `next start`, signed-out `GET`/`POST`/`PATCH`/`DELETE` all return `401` JSON from the proxy. The handlers were then called against the migrated database with Clerk's `auth()` stubbed to two throwaway user IDs, and all 23 checks passed: 401 when signed out; create with no body, a blank name and a trimmed name; `cuid` IDs; 400 for a non-string name, invalid JSON, an array body and an empty or missing rename; each user lists only their own projects; a non-owner's `PATCH`/`DELETE` returns 403 and leaves the row unchanged; the owner can rename (200) and delete (204); a missing project returns 404. The test rows were removed afterwards. Not exercised: a real Clerk session end to end (still no test account).
 
+- 07 Wire editor home (`context/feature-specs/07-wire-editor-home.md`)
+  - [x] `lib/projects/queries.ts`: `getProjectLists(user)` returns `{ myProjects, sharedProjects }` as `{ id, name }`, newest first. Owned projects match `ownerId`. Shared projects match `ProjectCollaborator.email` against the user's **verified** Clerk email addresses and exclude projects the user owns. The spec referred to an "existing project data helper", but none existed, so this was added. `GET /api/projects` is unchanged, so its response shape stays the same.
+  - [x] `app/editor/page.tsx` is an async server component: `currentUser()` → `getProjectLists` → `EditorWorkspace`. Nothing is fetched client-side on first load. `lib/projects/mock.ts` was deleted, and `Project` lost its `slug` field (it is now `{ id, name }`, and `id` is the room ID).
+  - [x] `app/editor/[projectId]/page.tsx` — minimal workspace route (none existed for "navigate to the new workspace" to target). It has the same chrome, shows the project name in the navbar center and leaves the canvas area empty until the canvas spec. It returns 404 unless the project is in the user's owned or shared list.
+  - [x] `lib/projects/id.ts` — `createProjectIdSuffix()` (6 random `[a-z0-9]` characters from `crypto.getRandomValues`), `toProjectId(name, suffix)` (`<slug>-<suffix>`, with the slug cut so the ID is at most 64 characters) and `parseNewProjectId()` for the API.
+  - [x] `POST /api/projects` accepts an optional `id`: lowercase alphanumerics and single hyphens, at most 64 characters, otherwise 400. A taken ID returns 409 (`isUniqueConstraintViolation`, P2002, in `lib/prisma.ts`). With no `id`, the `cuid()` default still applies.
+  - [x] `lib/projects/requests.ts` — browser-side `createProject` / `renameProject` / `deleteProject`. Each throws an `Error` carrying the API's `{ error }` message.
+  - [x] `hooks/use-project-actions.ts` (`useProjectActions`) replaces `use-project-dialogs.ts`. Each create dialog draws one suffix, so the previewed room ID is exactly the one submitted. Create: `POST` → `router.push('/editor/<id>')`. Rename: `PATCH` → `router.refresh()`. Delete: `DELETE`, then `router.replace('/editor')` if it was the active workspace (read from `useParams`), otherwise `router.refresh()`. On failure the dialog stays open, shows the API message (`role="alert"`) and re-enables its confirm button.
+  - [x] Dialogs: create shows `Room ID <slug>-<suffix>` live; rename pre-fills the current name; delete names the project in its description.
+  - [x] Verified: `tsc`, `eslint` and `npm run build` pass (`/editor` and `/editor/[projectId]` are dynamic). 29 checks against the real database with Clerk `auth()` stubbed all passed: suffix format and uniqueness; room IDs for ASCII, CJK, 200-character and `Straße` names all pass server validation; 9 invalid IDs are rejected; `POST` with an ID returns 201 with the same ID; a duplicate returns 409; an invalid ID returns 400; no ID gives a cuid; owned lists are newest first with `{ id, name }` only; shared lists include only collaborator projects matched on a verified email, and never the user's own. Test rows were removed. In a browser, through a temporary public preview route with the API mocked in Playwright (since removed, `proxy.ts` restored): the room ID preview tracks typing with a stable suffix, the `POST` body `id` equals the preview, and create navigates to `/editor/<id>`. A 409 shows the error, keeps the dialog open and re-enables the button. Rename pre-fills, submits `PATCH` on Enter and refreshes. Deleting another project refreshes the current workspace; deleting the active one replaces to `/editor`, so Back skips the deleted workspace. Not exercised: a real signed-in session end to end (still no Clerk test account).
+
 ## In Progress
 
 - None.
@@ -81,6 +92,10 @@ Update this file whenever the current phase, active feature, or implementation s
 - `pg` warns that `sslmode=require` in the remote `DATABASE_URL` is treated as `verify-full` today and will change meaning in pg v9. Setting `sslmode=verify-full` explicitly keeps the current behaviour.
 - `GET /api/projects` returns owned projects only. Collaborator (shared) projects are matched by email, which the API would need to read from Clerk. That belongs to whichever spec wires up the Shared tab.
 - Project names have no maximum length: spec 06 doesn't set one and the column is unbounded `text`. Add a limit if a later spec asks for one.
+- Sidebar project rows still aren't links (the known issue in `current-issues.md`), so an existing project can only be opened by URL or by being redirected there after create. Spec 07 doesn't cover opening a project from the sidebar.
+- Collaborator emails are matched exactly. Nothing adds collaborators yet; whichever spec does should store emails normalized (lowercased) so matching stays reliable.
+- The 64-character project/room ID cap is this codebase's choice (spec 07 names none). Liveblocks isn't installed yet; confirm its room ID limits when it lands.
+- A 409 on create now draws a new room ID suffix in the same dialog (2026-09-18), so a retry after an ID clash goes through without reopening. `lib/projects/requests.ts` throws `ApiError` with the HTTP status so the hook can tell 409 apart. Remaining edge: if a create succeeds but its response is lost, the retry gets 409 against the user's own new project, and the next attempt creates a second project under the new suffix. Telling that apart would need a lookup of the conflicting ID's owner.
 - `.env` still holds the local `prisma dev` URL. Both the CLI and the app now take `DATABASE_URL` from `.env.local`, so that value is only used if `.env.local` drops its `DATABASE_URL`.
 
 ## Architecture Decisions
@@ -89,7 +104,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - `lib/` is grouped by domain (2026-09-18): `lib/http/` holds request/response helpers (`api-response.ts`, `request-body.ts`), `lib/projects/` holds project logic (`name.ts`, `slug.ts`, `ownership.ts`, `mock.ts`), and single-purpose infrastructure (`prisma.ts`, `clerk-appearance.ts`) stays at the top level. Prisma-specific helpers such as `isRecordNotFound` sit in `lib/prisma.ts` beside the client, not in the domain folder that first needed them. Helpers stay in `lib/` rather than `app/api/` because `proxy.ts` and client hooks import them too. There are no `index.ts` barrels: `lib/projects/` mixes client-safe files (`slug`, `name`) with a server-only one (`ownership` imports Prisma), and a barrel would let a client import pull Prisma into the browser bundle.
 - Prisma CLI and the Next.js app must read the same `DATABASE_URL`: `prisma7.config.ts` loads `.env.local` then `.env`, and dotenv keeps the first value, the same precedence Next.js uses. Schema files live under `prisma/` (the config points at the folder), with models in `prisma/models/*.prisma`.
 
-- Project dialog state lives in one hook (`hooks/use-project-dialogs.ts`) rather than in the sidebar, so the editor home and the sidebar open the same dialogs. The dialogs themselves are presentational and take values plus callbacks.
+- Project ID = Liveblocks room ID (2026-09-18, spec 07). The client builds it as `<slug>-<6-char suffix>` so the room ID is readable, and sends it on `POST`. The server validates the format and relies on the primary key for uniqueness (409 on collision). There is no separate room ID column.
+- Project dialog state and mutations live in one hook (`hooks/use-project-actions.ts`, formerly `use-project-dialogs.ts`) rather than in the sidebar, so the editor home and the sidebar open the same dialogs. The dialogs themselves are presentational and take values plus callbacks.
 - Project ownership is a list, not a flag: the sidebar renders rename/delete only for the list it is given handlers for. When the API slice lands, "owned" becomes whatever the server returns for the signed-in user.
 - The project sidebar hides its closed state with `inert` alone. `aria-hidden` was removed because Chrome warns when a focused descendant is hidden that way — which now happens whenever the mobile scrim closes the sidebar while a project action button has focus.
 - `cn()` is the `cn` npm package (replaces `clsx` + `tailwind-merge`, both removed). Every file imports it directly as `import { cn } from "cn"` — the `lib/utils.ts` re-export was deleted on 2026-09-17 so there is one spelling. `shadcn add` only rewrites `@/`-prefixed specifiers, so a newly added component may still arrive importing `@/lib/utils`; rewrite that line to `"cn"`. If a wrapped engine is ever needed (`createEngine`/`CnConfig`), reintroduce `lib/utils.ts` and switch every import back to it rather than having two spellings.

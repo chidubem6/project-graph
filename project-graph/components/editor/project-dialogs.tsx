@@ -6,12 +6,12 @@ import { EditorDialog } from "@/components/editor/editor-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { ProjectDialogsState } from "@/hooks/use-project-dialogs"
+import type { ProjectActionsState } from "@/hooks/use-project-actions"
 
 const RENAME_FORM_ID = "rename-project-form"
 
 interface ProjectDialogsProps {
-  dialogs: ProjectDialogsState
+  dialogs: ProjectActionsState
 }
 
 // Every project dialog, driven by one hook. Mounted once by the editor
@@ -22,8 +22,9 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
     activeDialog,
     targetProject,
     name,
-    slug,
+    roomId,
     isSubmitting,
+    error,
     setName,
     closeDialog,
     submit,
@@ -54,9 +55,9 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
         footer={
           <>
             {cancelButton}
-            {/* Gated on the name, not the slug: an unsluggable name still gets a
-                `project-<hash>` fallback, and gating on the slug used to leave
-                this button permanently inert with nothing explaining why. */}
+            {/* Gated on the name, not the room ID: an unsluggable name still
+                gets a `project-<hash>` fallback, and gating on the slug used to
+                leave this button permanently inert with nothing explaining why. */}
             <Button
               size="lg"
               onClick={submit}
@@ -80,9 +81,12 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
             className="h-10 rounded-xl"
           />
           <p className="text-xs text-copy-muted">
-            Slug{" "}
-            <span className="font-mono text-copy-secondary">{slug || "—"}</span>
+            Room ID{" "}
+            <span className="font-mono break-all text-copy-secondary">
+              {roomId || "—"}
+            </span>
           </p>
+          <DialogError message={error} />
         </div>
       </EditorDialog>
 
@@ -130,6 +134,7 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
             autoComplete="off"
             className="h-10 rounded-xl"
           />
+          <DialogError message={error} />
         </form>
       </EditorDialog>
 
@@ -155,7 +160,22 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
             </Button>
           </>
         }
-      />
+      >
+        <DialogError message={error} />
+      </EditorDialog>
     </>
+  )
+}
+
+interface DialogErrorProps {
+  message: string | null
+}
+
+function DialogError({ message }: DialogErrorProps) {
+  if (!message) return null
+  return (
+    <p role="alert" className="text-xs text-error">
+      {message}
+    </p>
   )
 }
