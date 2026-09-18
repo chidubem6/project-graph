@@ -54,7 +54,14 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
         footer={
           <>
             {cancelButton}
-            <Button size="lg" onClick={submit} disabled={!slug || isSubmitting}>
+            {/* Gated on the name, not the slug: an unsluggable name still gets a
+                `project-<hash>` fallback, and gating on the slug used to leave
+                this button permanently inert with nothing explaining why. */}
+            <Button
+              size="lg"
+              onClick={submit}
+              disabled={!name.trim() || isSubmitting}
+            >
               Create project
             </Button>
           </>

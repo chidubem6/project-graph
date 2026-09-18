@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 
 import { toProjectSlug } from "@/lib/project-slug"
 import type { Project } from "@/types/project"
@@ -22,7 +22,7 @@ export interface ProjectDialogsState {
   openRename: (project: Project) => void
   openDelete: (project: Project) => void
   closeDialog: () => void
-  submit: () => void
+  submit: () => Promise<void>
 }
 
 /**
@@ -40,11 +40,17 @@ export function useProjectDialogs(): ProjectDialogsState {
 
   const slug = useMemo(() => toProjectSlug(name), [name])
 
+  // `disabled` only takes effect once a render commits, so two clicks landing in
+  // the same frame would both get through. The ref closes that window; reading
+  // `isSubmitting` here instead would see a stale value from the click handler's
+  // closure.
+  const inFlight = useRef(false)
+
   // Closing leaves the form values in place so they do not flicker during the
-  // dialog's exit animation; every open resets what it needs.
+  // dialog's exit animation; every open resets what it needs. `isSubmitting` is
+  // deliberately not cleared here — see `submit`.
   const closeDialog = useCallback(() => {
     setActiveDialog(null)
-    setIsSubmitting(false)
   }, [])
 
   const openCreate = useCallback(() => {
@@ -67,12 +73,23 @@ export function useProjectDialogs(): ProjectDialogsState {
     setActiveDialog("delete")
   }, [])
 
-  // Persistence lands with the project API slice. Until then submitting only
-  // flips the loading flag and dismisses the dialog.
-  const submit = useCallback(() => {
+  // Persistence lands with the project API slice; the await point below is the
+  // only thing still missing. `isSubmitting` stays set past the close and is
+  // cleared by the next open rather than here, because clearing it in the same
+  // batch that sets it would mean no render ever observes it — which would make
+  // every `disabled={... || isSubmitting}` on the confirm buttons decorative.
+  const submit = useCallback(async () => {
+    if (inFlight.current) return
+    inFlight.current = true
     setIsSubmitting(true)
-    closeDialog()
-  }, [closeDialog])
+
+    try {
+      // TODO(project-api): await the create/rename/delete request here.
+    } finally {
+      inFlight.current = false
+      setActiveDialog(null)
+    }
+  }, [])
 
   return {
     activeDialog,
