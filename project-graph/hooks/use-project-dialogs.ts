@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react"
 
-import { toProjectSlug } from "@/lib/project-slug"
+import { toProjectSlug } from "@/lib/projects/slug"
 import type { Project } from "@/types/project"
 
 export type ProjectDialogKind = "create" | "rename" | "delete"

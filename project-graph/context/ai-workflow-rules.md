@@ -58,3 +58,23 @@ Progress state must reflect the actual state of the implementation, not the inte
 1. The current unit works end to end within its defined scope.
 2. No invariant defined in `architecture-context.md` was violated.
 3. `progress-tracker.md` reflects the completed work.
+
+## Branching And Merging
+
+Work happens on the long-lived `development` branch and lands on `master`
+through pull requests.
+
+**PRs are merged with a merge commit — never squashed or rebased.** The repo is
+configured to allow only merge commits, so this is enforced rather than
+remembered.
+
+The reason: squash and rebase both replace a branch's commits with new ones on
+`master`. Those new commits are not ancestors of the originals, so a branch that
+keeps living after the merge carries orphaned history. Git compares ancestry
+rather than content, so the next PR reports every shared file as `add/add`
+"added in both" even when the contents are perfectly compatible. This happened
+on PR #5, which came back `CONFLICTING` on seven files for that reason alone.
+
+A merge commit preserves ancestry, so `development` can live indefinitely and
+each PR starts from a shared ancestor. The trade is that `master` records one
+commit per commit rather than one per PR, which is accepted.
