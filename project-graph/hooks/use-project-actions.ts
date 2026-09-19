@@ -44,8 +44,8 @@ export interface ProjectActionsState {
 export function useProjectActions(): ProjectActionsState {
   const router = useRouter()
 
-  /* Only set inside /editor/[projectId], so deleting that project can leave the page */
-  const { projectId: activeProjectId } = useParams<{ projectId?: string }>()
+  /* Only set inside /editor/[roomId], so deleting that project can leave the page */
+  const { roomId: activeProjectId } = useParams<{ roomId?: string }>()
 
   /* Track which dialog is open, what it targets, and the form's state */
   const [activeDialog, setActiveDialog] = useState<ProjectDialogKind | null>(

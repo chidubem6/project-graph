@@ -1,3 +1,4 @@
+import type { Collaborator } from "@/types/collaborator"
 import type { Project } from "@/types/project"
 
 /* Browser-side /api/projects calls; failures throw ApiError with the API's message and status */
@@ -34,6 +35,47 @@ export async function renameProject(id: string, name: string): Promise<void> {
 /** Delete the project with the given id */
 export async function deleteProject(id: string): Promise<void> {
   await sendJson(`/api/projects/${encodeURIComponent(id)}`, "DELETE")
+}
+
+/** List the project's collaborators with their Clerk names and avatars */
+export async function fetchCollaborators(
+  projectId: string
+): Promise<Collaborator[]> {
+  const response = await sendJson(collaboratorsUrl(projectId), "GET")
+  const { collaborators } = (await response.json()) as {
+    collaborators: Collaborator[]
+  }
+  return collaborators
+}
+
+/** Invite a collaborator by email and return them as stored */
+export async function inviteCollaborator(
+  projectId: string,
+  email: string
+): Promise<Collaborator> {
+  const response = await sendJson(collaboratorsUrl(projectId), "POST", {
+    email,
+  })
+  const { collaborator } = (await response.json()) as {
+    collaborator: Collaborator
+  }
+  return collaborator
+}
+
+/** Remove a collaborator from the project */
+export async function removeCollaborator(
+  projectId: string,
+  collaboratorId: string
+): Promise<void> {
+  await sendJson(
+    `${collaboratorsUrl(projectId)}/${encodeURIComponent(collaboratorId)}`,
+    "DELETE"
+  )
+}
+
+/* The collaborators collection for one project */
+function collaboratorsUrl(projectId: string): string {
+  return `/api/projects/${encodeURIComponent(projectId)}/collaborators`
 }
 
 /* Send a request with an optional JSON body, throwing ApiError on failure */

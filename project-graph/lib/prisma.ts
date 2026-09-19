@@ -33,6 +33,12 @@ export function isRecordNotFound(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025"
 }
 
+// P2003: a write referenced a row that doesn't exist, e.g. a collaborator for a
+// project deleted since the ownership check.
+export function isForeignKeyViolation(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003"
+}
+
 // P2002: a `create` or `update` collided with a unique constraint.
 export function isUniqueConstraintViolation(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"

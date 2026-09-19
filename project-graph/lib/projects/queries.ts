@@ -1,5 +1,4 @@
-import type { User } from "@clerk/nextjs/server"
-
+import type { ProjectIdentity } from "@/lib/project-access"
 import { prisma } from "@/lib/prisma"
 import type { Project } from "@/types/project"
 
@@ -12,28 +11,26 @@ export interface ProjectLists {
 const projectSummary = { id: true, name: true } as const
 
 /** Retrieve the sidebar's owned and shared project lists, newest first */
-export async function getProjectLists(user: User): Promise<ProjectLists> {
-  /* Collect the user's verified emails, since anyone can add unverified ones */
-  const emails = user.emailAddresses
-    .filter((address) => address.verification?.status === "verified")
-    .map((address) => address.emailAddress)
-
-  /* Load both lists at once, skipping shared if no verified email */
+export async function getProjectLists(
+  identity: ProjectIdentity
+): Promise<ProjectLists> {
+  /* Load both lists at once, skipping shared if no verified primary email */
   const [myProjects, sharedProjects] = await Promise.all([
     /* Owned projects match on the Clerk user ID */
     prisma.project.findMany({
-      where: { ownerId: user.id },
+      where: { ownerId: identity.userId },
       select: projectSummary,
       orderBy: { createdAt: "desc" },
     }),
 
-    /* Shared projects match on a collaborator email the user owns */
-    emails.length === 0
+    /* Shared projects match on the same email `findAccessibleProject` accepts,
+       so every shared entry opens rather than showing AccessDenied */
+    identity.email === null
       ? []
       : prisma.project.findMany({
           where: {
-            ownerId: { not: user.id },
-            collaborators: { some: { email: { in: emails } } },
+            ownerId: { not: identity.userId },
+            collaborators: { some: { email: identity.email } },
           },
           select: projectSummary,
           orderBy: { createdAt: "desc" },
