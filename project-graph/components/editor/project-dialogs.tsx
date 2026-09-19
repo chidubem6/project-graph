@@ -34,11 +34,13 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
     if (!open) closeDialog()
   }
 
+  // Disabled mid-request to match the hook, which ignores closes until it settles
   const cancelButton = (
     <Button
       variant="ghost"
       size="lg"
       onClick={closeDialog}
+      disabled={isSubmitting}
       className="text-copy-muted hover:text-copy-primary"
     >
       Cancel

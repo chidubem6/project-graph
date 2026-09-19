@@ -61,16 +61,23 @@ export function useProjectActions(): ProjectActionsState {
   /* Preview the room ID the new project will get as the user types */
   const roomId = useMemo(() => toProjectId(name, idSuffix), [name, idSuffix])
 
-  /* Blocks same-frame double clicks that `disabled` and stale `isSubmitting` miss */
+  /*
+   * Set for the whole request. Blocks same-frame double clicks that `disabled` and
+   * stale `isSubmitting` miss, and locks the dialog so a pending completion can
+   * only ever close the dialog that started it.
+   */
   const inFlight = useRef(false)
 
   /** Close the open dialog, keeping form values so the exit animation doesn't flicker */
   const closeDialog = useCallback(() => {
+    /* Cancel, Escape and the backdrop all land here; ignore them mid-request */
+    if (inFlight.current) return
     setActiveDialog(null)
   }, [])
 
   /** Open the create dialog with an empty name and a fresh room ID */
   const openCreate = useCallback(() => {
+    if (inFlight.current) return
     setTargetProject(null)
     setName("")
     setIdSuffix(createProjectIdSuffix())
@@ -81,6 +88,7 @@ export function useProjectActions(): ProjectActionsState {
 
   /** Open the rename dialog prefilled with the project's current name */
   const openRename = useCallback((project: Project) => {
+    if (inFlight.current) return
     setTargetProject(project)
     setName(project.name)
     setIsSubmitting(false)
@@ -90,6 +98,7 @@ export function useProjectActions(): ProjectActionsState {
 
   /** Open the delete confirmation for the given project */
   const openDelete = useCallback((project: Project) => {
+    if (inFlight.current) return
     setTargetProject(project)
     setIsSubmitting(false)
     setError(null)
